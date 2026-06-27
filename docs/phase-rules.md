@@ -13,6 +13,8 @@ If phase notes conflict, mark the phase as unknown and ask or proceed only with 
 
 ## Current Known Phase Status
 
+Note: resolved, see docs/decision-log.md (2026-06-26).
+
 `PROJECT_STATE.md` contains conflicting notes:
 
 - "Phase 2.7 complete. Phase 3 is next."

@@ -31,7 +31,7 @@ A premium SaaS platform for local service businesses. The core offer is a profes
 - AI-assisted content that sounds like the actual business, not a template
 - Industry-specific blueprints that give each business type a meaningfully different site
 - Custom animated sections (Pressure Wash Reveal, Ice Cream Hero, Gallery, etc.)
-- 6 carefully designed style packs — each produces a distinct visual identity
+- 7 carefully designed style packs — each produces a distinct visual identity
 - Free-first content generation; AI is an upgrade layer, never a dependency
 
 **Operations product (longer roadmap):**
@@ -101,7 +101,7 @@ Reusable rendering engine that generates client websites from structured JSON da
 
 **Files:**
 - `lib/website-engine/types.ts` — TypeScript interfaces
-- `lib/website-engine/stylePacks.ts` — 6 style packs
+- `lib/website-engine/stylePacks.ts` — 7 style packs
 - `lib/website-engine/sampleData.ts` — Sample data for demos
 - `app/components/website-engine/WebsiteRenderer.tsx` — Section registry + renderer
 - `app/components/website-engine/sections/` — 11 registered section components:

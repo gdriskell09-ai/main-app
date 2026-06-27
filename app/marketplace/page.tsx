@@ -57,11 +57,12 @@ export default function MarketplacePage() {
             {[
               { label: "Business types",     value: `${totalCount}+` },
               { label: "Live demo sites",    value: `${demoCount}`   },
-              { label: "Starting monthly",   value: "$97"            },
+              { label: "NOT FINALIZED — DO NOT LAUNCH", value: "⚠️ PRICING TBD", warn: true },
             ].map((s) => (
-              <div key={s.label} className="rounded-[1.5rem] border border-black/5 bg-[#f7f5ef] px-5 py-4">
-                <p className="text-2xl font-semibold text-slate-950">{s.value}</p>
-                <p className="mt-1 text-xs font-medium text-slate-500">{s.label}</p>
+              <div key={s.label} className="rounded-[1.5rem] border border-black/5 bg-[#f7f5ef] px-5 py-4"
+                style={s.warn ? { background: "#fef3c7", border: "2px solid #d97706" } : undefined}>
+                <p className="text-2xl font-semibold text-slate-950" style={s.warn ? { color: "#92400e" } : undefined}>{s.value}</p>
+                <p className="mt-1 text-xs font-medium text-slate-500" style={s.warn ? { color: "#92400e", fontWeight: 700 } : undefined}>{s.label}</p>
               </div>
             ))}
           </div>

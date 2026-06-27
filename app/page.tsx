@@ -297,12 +297,13 @@ export default function HomePage() {
             <div className="mx-auto mt-14 grid max-w-lg grid-cols-3 divide-x divide-black/5 rounded-[1.5rem] border border-black/5 bg-white px-2 py-4 shadow-sm">
               {[
                 { value: `${BUSINESS_TYPE_COUNT}+`,   label: "Business types"  },
-                { value: "$97",   label: "Starting / mo"   },
+                { value: "⚠️ PRICING TBD", label: "NOT FINALIZED — DO NOT LAUNCH", warn: true },
                 { value: "3 days",label: "Avg time to live" },
               ].map((s) => (
-                <div key={s.label} className="px-4 text-center">
-                  <p className="text-xl font-bold text-slate-950">{s.value}</p>
-                  <p className="mt-0.5 text-xs text-slate-500">{s.label}</p>
+                <div key={s.label} className="px-4 text-center"
+                  style={s.warn ? { background: "#fef3c7", borderRadius: "8px", padding: "8px 4px" } : undefined}>
+                  <p className="text-xl font-bold text-slate-950" style={s.warn ? { color: "#92400e", fontSize: "12px" } : undefined}>{s.value}</p>
+                  <p className="mt-0.5 text-xs text-slate-500" style={s.warn ? { color: "#92400e", fontWeight: 700, fontSize: "9px", lineHeight: "1.3" } : undefined}>{s.label}</p>
                 </div>
               ))}
             </div>
@@ -655,8 +656,9 @@ export default function HomePage() {
             {[
               {
                 name: "Starter",
-                price: "$97",
-                period: "/mo",
+                price: "⚠️ PRICING TBD",
+                period: "NOT FINALIZED — DO NOT LAUNCH",
+                priceWarn: true,
                 tagline: "For businesses that need a great website and nothing else.",
                 cta: "Get started",
                 popular: false,
@@ -671,8 +673,9 @@ export default function HomePage() {
               },
               {
                 name: "Growth",
-                price: "$197",
-                period: "/mo",
+                price: "⚠️ PRICING TBD",
+                period: "NOT FINALIZED — DO NOT LAUNCH",
+                priceWarn: true,
                 tagline: "For businesses actively managing leads, jobs, and follow-ups.",
                 cta: "Get started",
                 popular: true,
@@ -687,8 +690,9 @@ export default function HomePage() {
               },
               {
                 name: "Pro",
-                price: "$347",
-                period: "/mo",
+                price: "⚠️ PRICING TBD",
+                period: "NOT FINALIZED — DO NOT LAUNCH",
+                priceWarn: true,
                 tagline: "For operators who want the complete stack.",
                 cta: "Talk to us",
                 popular: false,
@@ -716,8 +720,14 @@ export default function HomePage() {
                 <div>
                   <p className={`text-sm font-semibold ${plan.popular ? "text-slate-400" : "text-slate-500"}`}>{plan.name}</p>
                   <div className="mt-2 flex items-end gap-1">
-                    <span className="text-4xl font-bold tracking-tight">{plan.price}</span>
-                    <span className={`mb-1 text-sm ${plan.popular ? "text-slate-400" : "text-slate-500"}`}>{plan.period}</span>
+                    <span
+                      className={plan.priceWarn ? undefined : "text-4xl font-bold tracking-tight"}
+                      style={plan.priceWarn ? { display: "inline-block", background: "#fef3c7", border: "2px solid #d97706", borderRadius: "6px", padding: "3px 8px", fontSize: "13px", fontWeight: 800, color: "#92400e" } : undefined}
+                    >{plan.price}</span>
+                    <span
+                      className={plan.priceWarn ? undefined : `mb-1 text-sm ${plan.popular ? "text-slate-400" : "text-slate-500"}`}
+                      style={plan.priceWarn ? { fontSize: "9px", fontWeight: 700, color: "#92400e" } : undefined}
+                    >{plan.period}</span>
                   </div>
                   <p className={`mt-3 text-sm leading-6 ${plan.popular ? "text-slate-400" : "text-slate-600"}`}>{plan.tagline}</p>
                 </div>
