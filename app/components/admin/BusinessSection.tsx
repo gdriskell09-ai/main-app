@@ -48,18 +48,12 @@ const INDUSTRIES = [
   "Roofing",
   "HVAC",
   "Plumbing",
-  "Electrical",
   "Gym / Fitness Studio",
   "Personal Trainer",
   "Barber / Salon",
   "Restaurant / Cafe",
   "Ice Cream / Food",
-  "Cleaning Services",
-  "Window Cleaning",
-  "Concrete & Paving",
-  "Handyman",
-  "Moving",
-  "Other",
+  "Other / General Contractor",
 ];
 
 function blankProfile(): Omit<BusinessProfile, "id" | "createdAt" | "updatedAt"> {
