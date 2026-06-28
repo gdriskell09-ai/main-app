@@ -65,10 +65,11 @@ Critical findings from impact audit (2026-06-28):
 - Do NOT approve a "storage.ts-only" migration — it will produce subtle bugs (stale reads after delete, lost saves on navigation).
 - `bp_` profile ID format must be preserved as the Supabase text PK to avoid breaking existing preview URLs.
 - `generatedContent` preferred as inline JSONB in `business_profiles` table (not a separate table) for the first migration.
-- Preview/RLS strategy unresolved: public preview URLs break under strict `owner_id` RLS — must decide before writing any schema.
+- Preview/RLS future direction established (2026-06-28): admin reads use strict `owner_id = auth.uid()` RLS; public/shareable preview is a **separate future slice** gated by a `public_preview_enabled` flag and/or share token; anonymous Supabase reads by profile ID are rejected. This is no longer a blocker for the storage migration itself.
 - Dual-write (localStorage cache + background Supabase sync) is explicitly rejected — creates two sources of truth.
+- Do NOT implement: service role client, RLS policies, preview page refactor, share token table, `publicPreviewEnabled` field, or public preview route. All parked until storage migration lands and a separate preview-publishing slice is explicitly approved.
 
-When migration is approved, it must be scoped as: async `storage.ts` rewrite + all three caller files updated + RLS strategy chosen + preview URL behavior confirmed.
+When migration is approved, it must be scoped as: async `storage.ts` rewrite + all three caller files updated. Preview URL public access is a follow-on slice, not part of the migration.
 
 ## Forbidden For Now
 

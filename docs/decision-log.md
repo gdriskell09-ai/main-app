@@ -1,5 +1,25 @@
 # Decision Log
 
+## 2026-06-28: Preview/RLS Strategy — Future Direction Established (No Code Written)
+
+Read-only audit of the `/website-preview/[businessId]` page and Supabase client setup. No implementation approved.
+
+**Current state:**
+- `/website-preview/[businessId]` is a `"use client"` page reading from localStorage. No auth check. No Supabase involved.
+- App already exposes "Open Preview ↗" and "Copy Link" — sharing intent is clear.
+- Profile IDs use `bp_${Date.now()}_${random6}` — timestamp-guessable prefix, not cryptographically safe for open public reads.
+
+**Decisions recorded (future direction, not yet implemented):**
+- **Admin operations:** When profiles move to Supabase, all admin reads/writes must use strict `owner_id = auth.uid()` RLS. No exceptions.
+- **Public preview is a separate approved slice.** Do not conflate the storage migration with the public sharing architecture. They are independent slices.
+- **Anonymous Supabase reads by profile ID are rejected.** The `bp_` format is timestamp-guessable. Business profiles contain real contact info. Do not write an RLS policy that allows unauthenticated `SELECT` by ID.
+- **Server-side fetch/service role is the future controlled path** — allowed only via a server-side route under full application control, not a raw Supabase query from the browser. This approach must be gated: a `public_preview_enabled` flag on the profile and/or an unguessable share token/public slug must accompany any public server-side read, so not every profile ID is publicly renderable by default.
+- **Share tokens and publish flags are a later slice.** Do not design or build them now.
+- **No implementation approved:** No service role client, no RLS policy, no preview page refactor, no share token table, no `publicPreviewEnabled` field. All parked until storage migration lands and a separate preview-publishing slice is scoped and approved.
+
+**What unblocks the storage migration:**
+The preview/RLS question no longer requires a single resolved architecture before migration can proceed. The storage migration (async `storage.ts` + caller changes) can be approved and scoped independently. The public preview architecture is a follow-on slice.
+
 ## 2026-06-28: Business Profile Storage — Migration Impact Audit (No Code Written)
 
 Read-only audit confirmed that migrating `lib/business/storage.ts` from localStorage to Supabase cannot be done by editing `storage.ts` alone.

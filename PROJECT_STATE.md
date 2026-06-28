@@ -584,7 +584,7 @@ All five storage functions are synchronous. Supabase is async. Migration require
 Do not approve a "storage.ts-only" migration — it will produce silent bugs.
 
 **Open decisions blocking migration:**
-1. Preview/RLS strategy: public `/website-preview/bp_...` links break under `owner_id = auth.uid()` RLS. Must decide: server-side fetch (service role), share token, or admin-only preview.
+1. ~~Preview/RLS strategy~~ — **direction established (2026-06-28), no longer a blocker for the storage migration itself.** Admin reads: strict `owner_id = auth.uid()` RLS. Public preview: separate future slice, gated by `public_preview_enabled` flag and/or share token. Anonymous Supabase reads by profile ID are rejected. Storage migration may proceed independently.
 2. `owner_id` FK: include in first migration slice or add in a later RLS slice?
 
 **Settled decisions:**
