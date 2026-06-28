@@ -123,6 +123,41 @@ function interp(template: string, vars: Record<string, string>): string {
   return template.replace(/\{(\w+)\}/g, (_, key) => vars[key] ?? "");
 }
 
+// ── Industry-aware content lookup tables ──────────────────────────
+
+const TRUST_BADGES: Record<string, [string, string, string]> = {
+  "restaurant-cafe":  ["Dine In & Takeout",  "Fresh Daily",          "Local Favorite"          ],
+  "barber-salon":     ["Walk-ins Welcome",    "Licensed Stylists",    "Book Anytime"            ],
+  "gym-fitness":      ["Certified Coaches",   "All Fitness Levels",   "First Class Free"        ],
+  "ice-cream-shop":   ["Made Fresh Daily",    "Real Ingredients",     "Local Favorite"          ],
+  "personal-trainer": ["Certified Coach",     "Personalized Plans",   "Proven Results"          ],
+  "pressure-washing": ["Free Quotes",         "Fully Insured",        "Satisfaction Guaranteed" ],
+  "landscaping":      ["Free Estimates",      "Licensed & Insured",   "Always Reliable"         ],
+  "roofing":          ["Licensed & Insured",  "Free Inspections",     "Storm Claim Experts"     ],
+  "painting":         ["Licensed & Insured",  "Free Estimates",       "Satisfaction Guaranteed" ],
+  "hvac-plumbing":    ["Licensed & Bonded",   "24/7 Emergency",       "Upfront Pricing"         ],
+};
+
+const GALLERY_HEADINGS: Record<string, string> = {
+  "restaurant-cafe":  "Our Food & Atmosphere",
+  "barber-salon":     "Our Portfolio",
+  "gym-fitness":      "Our Facility",
+  "ice-cream-shop":   "Flavors & Shop",
+  "personal-trainer": "Client Results",
+  "pressure-washing": "Before & After Results",
+  "landscaping":      "Our Work",
+  "roofing":          "Recent Projects",
+  "painting":         "Before & After",
+};
+
+const FOOTER_CTA: Record<string, string> = {
+  "restaurant-cafe":  "View Our Menu →",
+  "barber-salon":     "Book an Appointment →",
+  "gym-fitness":      "Claim Free Trial →",
+  "ice-cream-shop":   "See Today's Flavors →",
+  "personal-trainer": "Book Free Consultation →",
+};
+
 // ── Custom module gating ──────────────────────────────────────────
 
 const CUSTOM_MODULE_IDS = new Set<string>([
@@ -177,6 +212,7 @@ function buildSection(
           badgeText:   content.heroBadgeTemplate
             ? t(content.heroBadgeTemplate)
             : `Serving ${area} · Licensed & Insured`,
+          trustBadges: TRUST_BADGES[blueprint.id] ?? ["Free Quotes", "Fully Insured", "Satisfaction Guaranteed"],
         },
       };
 
@@ -247,7 +283,7 @@ function buildSection(
       return {
         type: "GalleryMasonry",
         props: {
-          heading: "Our Work",
+          heading: GALLERY_HEADINGS[blueprint.id] ?? "Our Work",
           images: [
             { gradient: "linear-gradient(135deg,#334155,#475569)", alt: "Project 1" },
             { gradient: "linear-gradient(135deg,#1e293b,#334155)", alt: "Project 2" },
@@ -321,8 +357,9 @@ function buildSection(
           businessName,
           tagline: `Serving ${area}`,
           phone,
-          email:   profile.email || undefined,
-          address: vars.city     || undefined,
+          email:        profile.email || undefined,
+          address:      vars.city     || undefined,
+          footerCtaText: FOOTER_CTA[blueprint.id] ?? "Get a Free Quote →",
           links: [
             { label: "Services", href: "#" },
             { label: "Reviews",  href: "#" },

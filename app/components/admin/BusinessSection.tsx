@@ -10,6 +10,7 @@ import {
   deleteProfile,
   createId,
 } from "@/lib/business/storage";
+import { getBlueprint } from "@/lib/business/blueprints/index";
 
 // ── Constants ────────────────────────────────────────────────────
 
@@ -766,7 +767,16 @@ function BusinessEditor({ existing, onSaved, onCancel }: EditorProps) {
               <select
                 style={{ ...inputStyle, cursor: "pointer" }}
                 value={form.industry}
-                onChange={(e) => set("industry", e.target.value)}
+                onChange={(e) => {
+                  const newIndustry = e.target.value;
+                  if (newIndustry && !form.industry) {
+                    // First selection — auto-suggest the blueprint's recommended style pack
+                    const bp = getBlueprint(newIndustry);
+                    setForm((prev) => ({ ...prev, industry: newIndustry, preferredStylePack: bp.recommendedStylePacks[0] }));
+                  } else {
+                    set("industry", newIndustry);
+                  }
+                }}
               >
                 <option value="">Select industry</option>
                 {INDUSTRIES.map((ind) => (
@@ -1116,7 +1126,7 @@ function BusinessEditor({ existing, onSaved, onCancel }: EditorProps) {
               style={{ ...inputStyle, minHeight: "60px", resize: "vertical" }}
               value={form.quoteFormNeeds}
               onChange={(e) => set("quoteFormNeeds", e.target.value)}
-              placeholder="What info should the quote form collect? e.g. property size, service type, photos…"
+              placeholder="Notes on your quote or contact form needs (optional)"
             />
           </Field>
         </div>

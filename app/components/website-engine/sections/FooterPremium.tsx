@@ -7,7 +7,7 @@ export default function FooterPremium({
   stylePack,
   businessName,
 }: SectionRenderProps<FooterPremiumProps>) {
-  const { tagline, phone, email, address, links } = props;
+  const { tagline, phone, email, address, links, footerCtaText } = props;
   const name = props.businessName || businessName;
 
   const isDark =
@@ -76,7 +76,7 @@ export default function FooterPremium({
                 cursor: "pointer",
               }}
             >
-              Get a Free Quote →
+              {footerCtaText ?? "Get a Free Quote →"}
             </div>
           </div>
 

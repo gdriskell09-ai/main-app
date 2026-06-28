@@ -52,6 +52,7 @@ export interface HeroAnimatedProps {
   ctaPhone?: string;
   badgeText?: string;
   heroBg?: string;
+  trustBadges?: [string, string, string];
 }
 
 export interface ServiceItem {
@@ -139,6 +140,7 @@ export interface FooterPremiumProps {
   email?: string;
   address?: string;
   links?: { label: string; href: string }[];
+  footerCtaText?: string;
 }
 
 export interface PressureWashRevealProps {

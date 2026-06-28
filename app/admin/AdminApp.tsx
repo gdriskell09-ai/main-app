@@ -2034,6 +2034,14 @@ export default function AdminApp() {
       ],
     },
     {
+      label: "Website Builder",
+      items: [
+        { id: "websites",     label: "Website Profiles"     },
+        { id: "ai_generator", label: "Copy Kit"             },
+        { id: "contracts",    label: "ContractVault (Soon)" },
+      ],
+    },
+    {
       label: "Clients",
       items: [
         { id: "leads",     label: "Leads",     badge: newLeadsCount },
@@ -2045,14 +2053,6 @@ export default function AdminApp() {
       label: "Field Tools",
       items: [
         { id: "maphub", label: "Map Hub" },
-      ],
-    },
-    {
-      label: "Website Builder",
-      items: [
-        { id: "websites",     label: "Website Profiles" },
-        { id: "ai_generator", label: "Copy Kit"          },
-        { id: "contracts",    label: "ContractVault"     },
       ],
     },
     {

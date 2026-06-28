@@ -6,7 +6,8 @@ export default function HeroAnimated({
   props,
   stylePack,
 }: SectionRenderProps<HeroAnimatedProps>) {
-  const { headline, subheadline, ctaText, ctaPhone, badgeText, heroBg } = props;
+  const { headline, subheadline, ctaText, ctaPhone, badgeText, heroBg, trustBadges } = props;
+  const badges = trustBadges ?? ["Free Quotes", "Fully Insured", "Satisfaction Guaranteed"];
 
   return (
     <section
@@ -198,7 +199,7 @@ export default function HeroAnimated({
             borderTop: "1px solid rgba(255,255,255,0.10)",
           }}
         >
-          {["Free Quotes", "Fully Insured", "Satisfaction Guaranteed"].map((t) => (
+          {badges.map((t) => (
             <span
               key={t}
               style={{

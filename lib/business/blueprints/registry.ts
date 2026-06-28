@@ -82,6 +82,11 @@ export const BLUEPRINTS: IndustryBlueprint[] = [
         { icon: "🏡", title: "Local & Community First", description: "We source locally and give back to the {city} community every season."                  },
       ],
       reviewsHeading: "What Our Customers Are Saying",
+      reviewsDefaults: [
+        { name: "Sarah M.", rating: 5, text: "Best ice cream I've had — and I don't say that lightly. The flavors are creative, fresh, and you can tell they care about every scoop." },
+        { name: "James T.", rating: 5, text: "We came once and immediately told everyone we knew. My kids ask to come back every single week now." },
+        { name: "Linda R.", rating: 5, text: "The dairy-free options are just as good as the regular flavors — maybe better. Finally a place where everyone in our family gets something they love." },
+      ],
       faqDefaults: [
         { question: "Do you have dairy-free or vegan options?",     answer: "Yes! We offer a rotating selection of oat milk and coconut milk-based flavors. Ask at the counter for today's options." },
         { question: "Can I order a cake or book for an event?",     answer: "Absolutely. We do custom cakes, catering packages, and pre-orders. Contact us at least a week in advance."             },
@@ -177,6 +182,11 @@ export const BLUEPRINTS: IndustryBlueprint[] = [
         { icon: "💪", title: "Modern Equipment",     description: "Top-of-the-line equipment in a clean, motivating environment."                        },
       ],
       reviewsHeading: "Real Members. Real Results.",
+      reviewsDefaults: [
+        { name: "Sarah M.", rating: 5, text: "I've tried a lot of gyms and this one is different. The community here is real and the coaches actually know their stuff." },
+        { name: "James T.", rating: 5, text: "Down 20 lbs and stronger than I've been in years. The programming works and the coaches hold you accountable." },
+        { name: "Linda R.", rating: 5, text: "Intimidating at first but everyone was so welcoming. Went from barely showing up to being here 4 days a week. Best decision I've made." },
+      ],
       faqDefaults: [
         { question: "Do I need to be in shape to start?",     answer: "Not at all. We welcome all fitness levels. Our coaches scale every workout to where you are right now."                    },
         { question: "What's included with a membership?",     answer: "Unlimited class access, use of all equipment, and access to our member community. Details vary by membership tier."        },
@@ -265,6 +275,11 @@ export const BLUEPRINTS: IndustryBlueprint[] = [
         { icon: "🤝", title: "Real Accountability",       description: "I'm in your corner every step. Text access, weekly check-ins, and someone who genuinely cares."  },
         { icon: "🥗", title: "Nutrition Included",        description: "Training is only half the equation. Practical nutrition coaching — no fad diets."                 },
         { icon: "💡", title: "Education, Not Dependency", description: "I teach you HOW to train so you can succeed long after our work together."                        },
+      ],
+      reviewsDefaults: [
+        { name: "Sarah M.", rating: 5, text: "I hired a trainer because I needed accountability, and I got so much more than that. Down 30 lbs and completely changed how I think about training." },
+        { name: "James T.", rating: 5, text: "The personalized programming made all the difference. I'd been stuck for years — within 8 weeks I was past it." },
+        { name: "Linda R.", rating: 5, text: "Not just a trainer — a real coach. They check in, they adjust, and they genuinely care about your progress. Completely worth it." },
       ],
       faqDefaults: [
         { question: "Do you offer online coaching or only in-person?",     answer: "Both. Online coaching is fully supported with video check-ins, app-based programming, and daily support."                              },
@@ -537,6 +552,11 @@ export const BLUEPRINTS: IndustryBlueprint[] = [
         { icon: "💬", title: "You're Always Heard",    description: "We listen first. Every cut is a conversation — we do what you want, not what we assume."   },
         { icon: "🔄", title: "We Remember You",        description: "Walk in twice and we know your cut, your preferences, and your name."                      },
       ],
+      reviewsDefaults: [
+        { name: "Sarah M.", rating: 5, text: "Best haircut I've had in years. They actually listened to what I wanted and delivered exactly that. I won't go anywhere else now." },
+        { name: "James T.", rating: 5, text: "Clean shop, great vibe, and my stylist knew exactly what to do. Walked in feeling rough and walked out feeling sharp." },
+        { name: "Linda R.", rating: 5, text: "I've been searching for a great salon for a long time. Finally found it. Booked my next appointment before I even left." },
+      ],
       faqDefaults: [
         { question: "Do you take walk-ins?",             answer: "Yes — walk-ins are always welcome, but booking ahead guarantees your preferred time and stylist."       },
         { question: "How do I book an appointment?",     answer: "Call us, book online, or walk in. We'll get you sorted quickly."                                      },
@@ -626,6 +646,11 @@ export const BLUEPRINTS: IndustryBlueprint[] = [
         { icon: "🏡", title: "Welcoming Atmosphere", description: "A place where you feel at home — whether it's your first visit or your hundredth."     },
         { icon: "👨‍🍳", title: "Passionate Kitchen",  description: "Our team loves what they make. That passion ends up on every plate."                   },
         { icon: "🎉", title: "Events & Catering",    description: "We handle your special occasions — corporate lunches, birthday dinners, and more."     },
+      ],
+      reviewsDefaults: [
+        { name: "Sarah M.", rating: 5, text: "The food was incredible and the atmosphere made it even better. One of our favorite spots in town — we keep coming back." },
+        { name: "James T.", rating: 5, text: "Fresh, flavorful, and the service was warm and attentive. Exactly what a great meal out should feel like." },
+        { name: "Linda R.", rating: 5, text: "Brought family visiting from out of town and everyone raved about it. Portions are generous and everything tasted homemade." },
       ],
       faqDefaults: [
         { question: "Do you take reservations?",                answer: "Yes — call us or book online. Walk-ins are welcome based on availability."                                     },
