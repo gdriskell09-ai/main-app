@@ -6,9 +6,9 @@ import { createClient } from "@/lib/supabase/client";
 type LineItem = { description: string; qty: number; price: number };
 
 type Invoice = {
-  id: number;
-  customer_id: number;
-  quote_id: number | null;
+  id: string;
+  customer_id: string;
+  quote_id: string | null;
   invoice_number: string;
   title: string;
   line_items: LineItem[];
@@ -20,7 +20,7 @@ type Invoice = {
 };
 
 type Customer = {
-  id: number;
+  id: string;
   name: string;
   email: string | null;
   phone: string | null;
