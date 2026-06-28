@@ -1,5 +1,20 @@
 # Decision Log
 
+## 2026-06-28: Phase 3.7 Slice E — One-Time localStorage Profile Import
+
+Commit `30418b8`. Files: `lib/business/storage.ts`, `app/components/admin/BusinessSection.tsx`.
+
+Added `migrateLocalStorageProfiles()` to `storage.ts`. Called on admin Websites mount (via async IIFE in `useEffect`) before `getAllProfiles()`. Reads `localStorage["main_app_business_profiles"]`; if `bp_migrated === "true"` or no valid array data, returns immediately. Otherwise upserts each profile to Supabase via `saveProfile()` and sets `bp_migrated = "true"` only after all succeed. On any upsert error the flag stays unset and the import retries on next load.
+
+Key decisions:
+- **Retry-on-failure** — flag set only after full success; upsert is idempotent so retrying the full set is safe.
+- **localStorage not deleted** — data preserved until a future cleanup slice is approved.
+- **`bp_` IDs preserved** — same IDs written to Supabase; no preview URL breakage.
+- **`generatedContent` preserved** — carried through `saveProfile`, mapped to `generated_content JSONB`.
+- **Known staleness side-effect** — `toRow()` stamps `updated_at: now` on every save, so migrated profiles with pre-existing `generatedContent` may show the amber staleness badge. Content itself is intact; badge clears on next regeneration.
+- No RLS policies. No service role client. No share tokens. No preview route refactor. No owner_id enforcement. No schema changes.
+- Build: 22/22 routes, 0 TypeScript errors.
+
 ## 2026-06-28: Phase 3.7 Slices B+C+D — Business Profile Supabase Storage Migration
 
 Commit `8bb8abb`. Files: `lib/business/storage.ts`, `app/components/admin/BusinessSection.tsx`, `app/admin/AdminApp.tsx`, `app/website-preview/[businessId]/page.tsx`.

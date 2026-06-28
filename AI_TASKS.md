@@ -16,7 +16,8 @@
 - Phase 3.6 Slice 1 complete (2026-06-28) — Generated content timestamp and reset-to-blueprint controls. Commit `27f2091`. File: `BusinessSection.tsx` only.
 - Phase 3.6 Slice 2A complete (2026-06-28) — Staleness indicator. Commit `a5d6673`. File: `BusinessSection.tsx` only. Shows amber "Content may be outdated" badge when `profile.updatedAt` > `generatedContent.generatedAt`.
 - Phase 3.6 complete. Parked (require explicit approval): content preview/read-only display on card, inline editing of generated content.
-- Phase 3.7 Slices B+C+D complete (2026-06-28) — Business profile storage migrated from localStorage to Supabase. Commit `8bb8abb`. Files: `lib/business/storage.ts`, `BusinessSection.tsx`, `AdminApp.tsx`, `[businessId]/page.tsx`. Slice E (localStorage data import) not yet started.
+- Phase 3.7 Slices B+C+D complete (2026-06-28) — Business profile storage migrated from localStorage to Supabase. Commit `8bb8abb`. Files: `lib/business/storage.ts`, `BusinessSection.tsx`, `AdminApp.tsx`, `[businessId]/page.tsx`.
+- Phase 3.7 Slice E complete (2026-06-28) — One-time localStorage → Supabase profile import. Commit `30418b8`. Files: `lib/business/storage.ts`, `BusinessSection.tsx`. `migrateLocalStorageProfiles()` runs on first admin Websites load; sets `bp_migrated` flag after all upserts succeed.
 
 ## Current Approved Work
 
@@ -57,15 +58,18 @@ Install only when explicitly requested.
 - Client dashboard
 - Marketplace/premium modules
 
-## Parked — Business Profile Slice E (localStorage Data Import)
+## Phase 3.7 Slice E — Complete
 
-Phase 3.7 Slices B+C+D are complete (commit `8bb8abb`). Storage now reads/writes Supabase. Existing localStorage profiles are not visible until Slice E runs.
+Commit `30418b8`. `migrateLocalStorageProfiles()` added to `lib/business/storage.ts`. Runs on first admin Websites load; reads `localStorage["main_app_business_profiles"]`, upserts each profile to Supabase via `saveProfile`, sets `localStorage["bp_migrated"] = "true"`. localStorage data not deleted.
 
-**Slice E scope (not yet started, requires explicit approval):**
-On first authenticated admin load: check `localStorage["main_app_business_profiles"]`, upsert each profile to Supabase via `saveProfile`, set `localStorage["bp_migrated"] = "true"`. After migration flag is set, localStorage is no longer read.
-
-**Still parked until Slice E is live and stable:**
-- Do NOT implement: RLS policies (`owner_id` enforcement), service role client, preview page refactor, share token table, `publicPreviewEnabled` field, or public preview route.
+**Still parked (require separate approval):**
+- RLS policies (`owner_id` enforcement)
+- Service role client
+- Preview page refactor
+- Share token table
+- `publicPreviewEnabled` field
+- Public preview route
+- Dropping localStorage reads entirely (future cleanup after `bp_migrated` is confirmed set)
 
 ## Forbidden For Now
 

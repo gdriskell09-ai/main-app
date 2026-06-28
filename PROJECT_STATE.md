@@ -15,7 +15,7 @@
 
 **Important separation rule:** `scrub-club-app` is a separate proof-model pressure washing app at `/Users/grantdriskell/Documents/GitHub/scrub-club-app`. Do not copy assumptions, file paths, schema, or app architecture between repos without explicit approval.
 
-**Current phase:** Phase 3.7 Slices B+C+D complete (2026-06-28). Business profile storage migrated from localStorage to Supabase. Slice E (localStorage data import) not yet started.
+**Current phase:** Phase 3.7 fully complete (2026-06-28). Business profile storage migrated to Supabase (Slices B+C+D); one-time localStorage import added (Slice E).
 
 **Current product rule:** the base website builder must work with zero AI keys. Blueprint/fallback generation remains the default. AI and future tool modules are optional roadmap layers unless explicitly approved.
 
@@ -58,7 +58,7 @@ A premium SaaS platform for local service businesses. The core offer is a profes
 | Database | Supabase (PostgreSQL) — partial integration |
 | Auth | Supabase Auth |
 | AI | Groq (llama-3.3-70b-versatile) via server-side only |
-| Storage (profiles) | Supabase (`business_profiles` table) — `lib/business/storage.ts` uses async Supabase calls; Slice E data import pending |
+| Storage (profiles) | Supabase (`business_profiles` table) — `lib/business/storage.ts` uses async Supabase calls; one-time localStorage import on first admin load (`bp_migrated` flag) |
 | Maps | react-leaflet |
 | Middleware | `proxy.ts` (NOT `middleware.ts` — Next.js 16 naming conflict) |
 
@@ -190,7 +190,7 @@ Bug fixed during QA: `premium-minimal` style pack missing from website-preview s
 
 ## 5. Current Stop Point
 
-**Phase 3.7 Slices B+C+D complete (2026-06-28). Business profile storage migrated to Supabase. Slice E not started.**
+**Phase 3.7 fully complete (2026-06-28). Business profile storage migrated to Supabase (Slices B+C+D); one-time localStorage import shipped (Slice E).**
 
 Phase 3.4d.2 shipped as commit `6540db5`. Phase 3.5 confirmed complete via audit on 2026-06-28 — no new commits required; all components were already present in the repo.
 
@@ -221,8 +221,16 @@ Commit `8bb8abb`. Files changed: `lib/business/storage.ts`, `app/components/admi
 - No RLS policies. No service role client. No share tokens. No preview route refactor. No owner_id enforcement. No schema changes in code.
 - Build: 22/22 routes, 0 TypeScript errors.
 
-**Slice E not yet started (requires separate approval):**
-- Existing localStorage profiles are invisible in admin until a one-time import runs. Slice E: on first authenticated load, read `localStorage["main_app_business_profiles"]`, upsert each profile to Supabase, set `localStorage["bp_migrated"] = "true"`.
+### Phase 3.7 Slice E — One-Time localStorage Profile Import (complete, 2026-06-28)
+
+Commit `30418b8`. Files changed: `lib/business/storage.ts`, `app/components/admin/BusinessSection.tsx`.
+
+- **`migrateLocalStorageProfiles()` added to `storage.ts`:** reads `localStorage["main_app_business_profiles"]`; if `bp_migrated` is already `"true"` or no valid data exists, does nothing. Otherwise upserts each profile via `saveProfile()`, preserving `bp_` IDs and `generatedContent`. Sets `bp_migrated = "true"` only after all succeed; on error the flag stays unset and the import retries on next load.
+- **`BusinessSection.tsx` updated:** `useEffect` now awaits `migrateLocalStorageProfiles()` before `void load()`, so imported profiles appear on the first admin Websites load.
+- localStorage data is not deleted.
+- Known: imported profiles may show the staleness badge because `updatedAt` is refreshed during upsert.
+- No RLS policies. No service role client. No share tokens. No preview route refactor. No owner_id enforcement. No schema changes.
+- Build: 22/22 routes, 0 TypeScript errors.
 
 ### Phase 3.5 — Generate Website Content (complete, confirmed via audit 2026-06-28)
 
@@ -238,7 +246,7 @@ Known open items (not blocking):
 - Photographer industry: no blueprint exists; falls to contractor-handyman fallback.
 - Mobile admin UI (post-login): not verified — requires live Supabase credentials.
 - Invoice print route (`/admin/invoice/[id]`): auth-gated, not tested without credentials.
-- Website Profile storage: migrated to Supabase (Phase 3.7 Slices B+C+D). Existing localStorage profiles require Slice E import to become visible.
+- Website Profile storage: migrated to Supabase (Phase 3.7 Slices B+C+D, commit `8bb8abb`). One-time localStorage import complete (Phase 3.7 Slice E, commit `30418b8`).
 
 Phase 3.3 QA summary (2026-06-27):
 - Lead → Customer → Quote → Job → Invoice: ✅ full flow verified
@@ -596,15 +604,15 @@ Do not build until invoicing and job tracking are live and generating usage.
 - `generatedContent` stored as `generated_content JSONB` inline.
 - All three caller files updated to `await` storage calls.
 
-**Slice E — localStorage data import (not yet started, requires approval):**
-On first authenticated admin load: read `localStorage["main_app_business_profiles"]`, upsert each existing profile to Supabase, set `localStorage["bp_migrated"] = "true"`. Until this runs, profiles created before Phase 3.7 are not visible in the admin panel.
+**Slice E — localStorage data import (complete, 2026-06-28):**
+`migrateLocalStorageProfiles()` in `storage.ts` runs on first admin Websites load. Reads `localStorage["main_app_business_profiles"]`, upserts each profile to Supabase via `saveProfile`, sets `localStorage["bp_migrated"] = "true"`. localStorage data is not deleted. Commit `30418b8`.
 
 **Migration plan status:**
 1. ~~Resolve preview/RLS strategy~~ — done (2026-06-28)
 2. ~~Create `business_profiles` table in Supabase~~ — done (pre-condition for Phase 3.7)
 3. ~~Update `storage.ts` + all three caller files to be async~~ — done (commit `8bb8abb`)
-4. One-time localStorage → Supabase import — **Slice E, not started**
-5. Drop localStorage reads entirely after migration flag is set — **part of Slice E**
+4. ~~One-time localStorage → Supabase import~~ — done (commit `30418b8`)
+5. Drop localStorage reads entirely after migration flag is set — **future cleanup, not yet approved**
 
 **Tables created:**
 - `business_profiles` — one row per client business (`id TEXT PK`, `owner_id TEXT`, `customer_id TEXT`, all profile fields, `generated_content JSONB`, timestamps)
@@ -877,4 +885,4 @@ Every step requires explicit owner approval before anything is published, listed
 
 ---
 
-*Last updated: Phase 3.7 Slices B+C+D complete (2026-06-28). Business profile storage migrated to Supabase. Commit `8bb8abb`. Slice E (localStorage data import) not yet started.*
+*Last updated: Phase 3.7 fully complete (2026-06-28). Business profile storage migrated to Supabase (commit `8bb8abb`); one-time localStorage import added (commit `30418b8`).*
