@@ -140,7 +140,7 @@ export default function BarbershopDemo() {
             <p className="text-sm font-bold uppercase tracking-widest text-amber-500 mb-2">Location</p>
             <h2 className="text-3xl font-black text-white mb-6">Find Us</h2>
             <div className="space-y-3 text-sm text-slate-400">
-              <p>📍 123 Main Street, Suite 100<br />Your City, ST 00000</p>
+              <p>📍 123 Main Street, Suite 100<br />Columbus, OH 43215</p>
               <p>📞 (555) 832-0700</p>
               <p>✉️ freshcuts@example.com</p>
             </div>
