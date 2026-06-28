@@ -1,5 +1,22 @@
 # Decision Log
 
+## 2026-06-28: Business Profile Storage — Migration Impact Audit (No Code Written)
+
+Read-only audit confirmed that migrating `lib/business/storage.ts` from localStorage to Supabase cannot be done by editing `storage.ts` alone.
+
+Key findings:
+- All five exported functions (`getAllProfiles`, `getProfile`, `saveProfile`, `deleteProfile`, `createId`) are **synchronous**. Supabase calls are async.
+- `saveProfile` returns `BusinessProfile` synchronously; callers use the return value immediately to update React state. An async version propagates `await` into callers.
+- Three files beyond `storage.ts` require changes: `app/components/admin/BusinessSection.tsx` (8 call sites — `handleDelete`, `handleClear`, `handleSubmit` must become `async`), `app/admin/AdminApp.tsx` (1 call site in a `useEffect`), `app/website-preview/[businessId]/page.tsx` (1 call site in a `useCallback`).
+
+Key decisions recorded:
+- **Do not approve a "storage.ts-only" migration.** The claim in Section 26 of `PROJECT_STATE.md` ("Swap for Supabase by replacing only this file") was aspirational — the audit proves it is incorrect. Future agents must not act on it.
+- **`bp_` profile ID format preserved.** Switching to UUIDs would break all existing `/website-preview/bp_...` URLs. Keep `bp_${timestamp}_${random}` as the Supabase text PK.
+- **`generatedContent` stays inline.** Store as a JSONB column in `business_profiles` rather than a separate `generated_website_content` table for the first migration. Separate table is a later optimization.
+- **Dual-write (localStorage + Supabase background sync) not recommended.** Creates two sources of truth and is harder to unwind than a clean async migration.
+- **Preview/RLS strategy unresolved.** Public shareable preview links (`/website-preview/bp_...`) break under strict `owner_id = auth.uid()` RLS — unauthenticated users see "not found." Three approaches under consideration: server-side fetch with service role key (cleanest), share token, or admin-only previews. Must be decided before migration is approved.
+- **Migration parked.** No schema changes, no migration code, no `storage.ts` edits until the preview/RLS question is resolved and the async caller changes are explicitly scoped and approved.
+
 ## 2026-06-28: Phase 3.6 Slice 1 — Generated Content Timestamp + Reset Controls
 
 Commit `27f2091`. File: `app/components/admin/BusinessSection.tsx` only.

@@ -55,6 +55,21 @@ Install only when explicitly requested.
 - Client dashboard
 - Marketplace/premium modules
 
+## Parked — Business Profile Supabase Migration
+
+Migration of `lib/business/storage.ts` from localStorage to Supabase is **planned but not approved**. Do not start it without explicit user approval.
+
+Critical findings from impact audit (2026-06-28):
+- All storage functions are synchronous. Supabase is async. The migration requires `async/await` changes in **three caller files**, not just `storage.ts`.
+- Files that need changes beyond `storage.ts`: `app/components/admin/BusinessSection.tsx`, `app/admin/AdminApp.tsx`, `app/website-preview/[businessId]/page.tsx`.
+- Do NOT approve a "storage.ts-only" migration — it will produce subtle bugs (stale reads after delete, lost saves on navigation).
+- `bp_` profile ID format must be preserved as the Supabase text PK to avoid breaking existing preview URLs.
+- `generatedContent` preferred as inline JSONB in `business_profiles` table (not a separate table) for the first migration.
+- Preview/RLS strategy unresolved: public preview URLs break under strict `owner_id` RLS — must decide before writing any schema.
+- Dual-write (localStorage cache + background Supabase sync) is explicitly rejected — creates two sources of truth.
+
+When migration is approved, it must be scoped as: async `storage.ts` rewrite + all three caller files updated + RLS strategy chosen + preview URL behavior confirmed.
+
 ## Forbidden For Now
 
 - payments

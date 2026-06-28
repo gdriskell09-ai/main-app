@@ -266,7 +266,7 @@ The admin container uses `overflow-hidden`. Every admin section MUST use `<div c
 
 ### Storage Abstraction
 
-`lib/business/storage.ts` — all reads/writes go through this file. To migrate from localStorage to Supabase, replace only this file.
+`lib/business/storage.ts` — all reads/writes go through this file. The abstraction is clean, but migration to Supabase requires async changes in this file **and** in three caller files (`BusinessSection.tsx`, `AdminApp.tsx`, `[businessId]/page.tsx`). See Section 26 for the full impact audit and settled decisions.
 
 ---
 
@@ -573,21 +573,39 @@ Do not build until invoicing and job tracking are live and generating usage.
 
 **Current:** localStorage (business profiles only)
 - Abstraction layer in `lib/business/storage.ts`
-- Swap for Supabase by replacing only this file
+- ~~Swap for Supabase by replacing only this file~~ — **INCORRECT. See impact audit below.**
 
-**Migration plan:**
-1. Create `business_profiles` table in Supabase with matching column names
-2. Create `generated_website_content` table for AI/fallback generated content
-3. Update `storage.ts` to use Supabase server client
-4. Migrate existing localStorage data on first load (one-time)
-5. Keep localStorage as offline cache after migration
+**Impact audit findings (2026-06-28):**
+All five storage functions are synchronous. Supabase is async. Migration requires `async/await` propagation into callers:
+- `lib/business/storage.ts` — all 4 data functions become `async`
+- `app/components/admin/BusinessSection.tsx` — 8 call sites; `handleDelete`, `handleClear`, `handleSubmit` must become `async`
+- `app/admin/AdminApp.tsx` — 1 `useEffect` call site
+- `app/website-preview/[businessId]/page.tsx` — 1 `useCallback` call site
+Do not approve a "storage.ts-only" migration — it will produce silent bugs.
+
+**Open decisions blocking migration:**
+1. Preview/RLS strategy: public `/website-preview/bp_...` links break under `owner_id = auth.uid()` RLS. Must decide: server-side fetch (service role), share token, or admin-only preview.
+2. `owner_id` FK: include in first migration slice or add in a later RLS slice?
+
+**Settled decisions:**
+- `bp_` profile ID format preserved as Supabase text PK — switching to UUIDs breaks all existing preview URLs.
+- `generatedContent` stored as inline JSONB in `business_profiles` (not a separate table) for the first migration.
+- Dual-write (localStorage cache + background Supabase sync) rejected — creates two sources of truth.
+- localStorage dropped entirely after one-time data migration — no offline cache.
+
+**Migration plan (revised, not yet approved):**
+1. Resolve preview/RLS strategy
+2. Create `business_profiles` table in Supabase with `bp_` text PK, `generated_content JSONB`, `customer_id TEXT`, `owner_id TEXT`
+3. Update `storage.ts` + all three caller files to be async (one atomic PR)
+4. One-time migration: on first load, detect existing localStorage data and write to Supabase, then set migration flag
+5. Drop localStorage reads entirely after migration flag is set
 
 **Tables planned (not yet created):**
-- `business_profiles` — one row per client business
-- `generated_website_content` — generated content tied to a profile
-- `invoices` — invoice records
-- `leads` — inbound leads from website forms
-- `jobs` — job/project records
+- `business_profiles` — one row per client business (includes `generated_content JSONB`)
+- `invoices` — invoice records (exists in Supabase already — `leads`, `customers`, `jobs`, `quotes` exist too)
+
+**Not planned as a separate table:**
+- `generated_website_content` — will be inline JSONB in `business_profiles` for the first migration; separate table is a later optimization if needed
 
 ---
 
