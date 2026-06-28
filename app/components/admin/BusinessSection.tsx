@@ -142,6 +142,7 @@ export default function BusinessSection() {
   const [genStatus,      setGenStatus]      = useState<Record<string, GenStatus>>({});
   const [genError,       setGenError]       = useState<Record<string, string>>({});
   const [deleteConfirm,  setDeleteConfirm]  = useState<Record<string, boolean>>({});
+  const [clearConfirm,   setClearConfirm]   = useState<Record<string, boolean>>({});
 
   const load = useCallback(() => setProfiles(getAllProfiles()), []);
 
@@ -211,6 +212,14 @@ export default function BusinessSection() {
         [p.id]: err instanceof Error ? err.message : "Unknown error",
       }));
     }
+  }
+
+  function handleClear(p: BusinessProfile) {
+    const updated = saveProfile({ ...p, generatedContent: undefined });
+    setProfiles((prev) => prev.map((x) => (x.id === updated.id ? updated : x)));
+    setGenStatus((prev) => ({ ...prev, [p.id]: "idle" }));
+    setGenError((prev) => ({ ...prev, [p.id]: "" }));
+    setClearConfirm((prev) => { const n = { ...prev }; delete n[p.id]; return n; });
   }
 
   if (view === "create" || view === "edit") {
@@ -520,6 +529,65 @@ export default function BusinessSection() {
                     </div>
                   );
                 })()}
+
+                {/* Generated content timestamp + clear */}
+                {p.generatedContent && (
+                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
+                    <span style={{ fontSize: "11px", color: "#94a3b8" }}>
+                      Generated {new Date(p.generatedContent.generatedAt).toLocaleDateString()}
+                    </span>
+                    {clearConfirm[p.id] ? (
+                      <div style={{ display: "flex", gap: "6px" }}>
+                        <button
+                          onClick={() => handleClear(p)}
+                          style={{
+                            padding: "4px 10px",
+                            borderRadius: "8px",
+                            background: "#e11d48",
+                            color: "#ffffff",
+                            border: "none",
+                            fontSize: "11px",
+                            fontWeight: 700,
+                            cursor: "pointer",
+                          }}
+                        >
+                          Confirm clear
+                        </button>
+                        <button
+                          onClick={() => setClearConfirm((prev) => ({ ...prev, [p.id]: false }))}
+                          style={{
+                            padding: "4px 10px",
+                            borderRadius: "8px",
+                            background: "#f1f5f9",
+                            color: "#475569",
+                            border: "none",
+                            fontSize: "11px",
+                            fontWeight: 600,
+                            cursor: "pointer",
+                          }}
+                        >
+                          Cancel
+                        </button>
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => setClearConfirm((prev) => ({ ...prev, [p.id]: true }))}
+                        style={{
+                          padding: "4px 10px",
+                          borderRadius: "8px",
+                          background: "#f8fafc",
+                          color: "#94a3b8",
+                          border: "1px solid #e2e8f0",
+                          fontSize: "11px",
+                          fontWeight: 600,
+                          cursor: "pointer",
+                        }}
+                      >
+                        Reset to blueprint
+                      </button>
+                    )}
+                  </div>
+                )}
 
                 {/* Actions */}
                 <div
