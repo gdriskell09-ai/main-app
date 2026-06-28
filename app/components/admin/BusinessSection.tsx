@@ -23,21 +23,23 @@ const STYLE_PACKS: { id: StylePackId; label: string; color: string }[] = [
   { id: "premium-minimal",  label: "Premium Minimal",  color: "#2d6a4f" },
 ];
 
-const CUSTOM_MODULES: { id: CustomModuleId; label: string; description: string }[] = [
-  {
-    id: "PressureWashRevealSection",
-    label: "Pressure Wash Reveal",
-    description: "Animated before/after reveal for cleaning/washing businesses",
-  },
-  {
-    id: "CustomIceCreamHero",
-    label: "Ice Cream Hero",
-    description: "Fun animated hero for food/dessert businesses",
-  },
+const CUSTOM_MODULES: { id: CustomModuleId; label: string; description: string; industries?: string[] }[] = [
   {
     id: "GalleryMasonry",
     label: "Photo Gallery",
-    description: "Masonry grid gallery of project photos",
+    description: "Masonry grid gallery for showcasing project photos and work",
+  },
+  {
+    id: "PressureWashRevealSection",
+    label: "Before/After Reveal",
+    description: "Animated before/after reveal slider — best for cleaning and washing businesses",
+    industries: ["Pressure Washing"],
+  },
+  {
+    id: "CustomIceCreamHero",
+    label: "Food/Dessert Hero",
+    description: "Fun animated hero section for food and dessert businesses",
+    industries: ["Ice Cream / Food"],
   },
 ];
 
@@ -812,13 +814,35 @@ function BusinessEditor({ existing, onSaved, onCancel }: EditorProps) {
             </Field>
           </div>
 
-          <Field label="Business Description / Headline">
+          <Field label="Tagline or Quick Description">
             <textarea
               style={{ ...inputStyle, minHeight: "76px", resize: "vertical" }}
               value={form.businessDescription}
               onChange={(e) => set("businessDescription", e.target.value)}
               placeholder="A short tagline or what you do best — used in the hero section"
             />
+          </Field>
+
+          <Field label="Brand Color">
+            <div style={{ display: "flex", alignItems: "center", gap: "12px" }}>
+              <input
+                type="color"
+                value={form.brandColor}
+                onChange={(e) => set("brandColor", e.target.value)}
+                style={{
+                  width: "44px",
+                  height: "36px",
+                  padding: "2px 3px",
+                  borderRadius: "8px",
+                  border: "1.5px solid #e2e8f0",
+                  cursor: "pointer",
+                  background: "#ffffff",
+                }}
+              />
+              <span style={{ fontSize: "13px", color: "#475569", fontFamily: "monospace" }}>
+                {form.brandColor}
+              </span>
+            </div>
           </Field>
         </div>
 
@@ -932,6 +956,16 @@ function BusinessEditor({ existing, onSaved, onCancel }: EditorProps) {
             Website Design
           </p>
 
+          <Field label="Logo URL">
+            <input
+              style={inputStyle}
+              value={form.logoUrl}
+              onChange={(e) => set("logoUrl", e.target.value)}
+              placeholder="https://example.com/logo.png"
+              type="url"
+            />
+          </Field>
+
           <Field label="Style Pack">
             <div
               style={{
@@ -979,54 +1013,71 @@ function BusinessEditor({ existing, onSaved, onCancel }: EditorProps) {
             </div>
           </Field>
 
-          <Field label="Custom Modules">
-            <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
-              {CUSTOM_MODULES.map((mod) => {
-                const active = form.desiredCustomModules.includes(mod.id);
-                return (
-                  <label
-                    key={mod.id}
+          <Field label="Add-on Sections">
+            {(() => {
+              const visibleModules = CUSTOM_MODULES.filter(
+                (mod) => !mod.industries || mod.industries.includes(form.industry)
+              );
+              return (
+                <div style={{ display: "flex", flexDirection: "column", gap: "10px" }}>
+                  {visibleModules.length === 0 ? (
+                    <p style={{ fontSize: "13px", color: "#94a3b8" }}>
+                      No add-on sections available for this industry.
+                    </p>
+                  ) : (
+                    visibleModules.map((mod) => {
+                      const active = form.desiredCustomModules.includes(mod.id);
+                      return (
+                        <label
+                          key={mod.id}
+                          style={{
+                            display: "flex",
+                            alignItems: "flex-start",
+                            gap: "12px",
+                            padding: "14px 16px",
+                            borderRadius: "12px",
+                            border: `1.5px solid ${active ? "#0f172a" : "#e2e8f0"}`,
+                            background: active ? "#f8fafc" : "#ffffff",
+                            cursor: "pointer",
+                          }}
+                        >
+                          <input
+                            type="checkbox"
+                            checked={active}
+                            onChange={() => toggleModule(mod.id)}
+                            style={{ marginTop: "2px", accentColor: "#0f172a" }}
+                          />
+                          <div>
+                            <div style={{ fontSize: "14px", fontWeight: 600, color: "#0f172a" }}>
+                              {mod.label}
+                            </div>
+                            <div style={{ fontSize: "12px", color: "#64748b", marginTop: "2px" }}>
+                              {mod.description}
+                            </div>
+                          </div>
+                        </label>
+                      );
+                    })
+                  )}
+                  <div
                     style={{
-                      display: "flex",
-                      alignItems: "flex-start",
-                      gap: "12px",
-                      padding: "14px 16px",
-                      borderRadius: "12px",
-                      border: `1.5px solid ${active ? "#0f172a" : "#e2e8f0"}`,
-                      background: active ? "#f8fafc" : "#ffffff",
-                      cursor: "pointer",
+                      marginTop: "4px",
+                      padding: "12px 14px",
+                      borderRadius: "10px",
+                      background: "#f8fafc",
+                      border: "1px solid #e2e8f0",
                     }}
                   >
-                    <input
-                      type="checkbox"
-                      checked={active}
-                      onChange={() => toggleModule(mod.id)}
-                      style={{ marginTop: "2px", accentColor: "#0f172a" }}
-                    />
-                    <div>
-                      <div
-                        style={{
-                          fontSize: "14px",
-                          fontWeight: 600,
-                          color: "#0f172a",
-                        }}
-                      >
-                        {mod.label}
-                      </div>
-                      <div
-                        style={{
-                          fontSize: "12px",
-                          color: "#64748b",
-                          marginTop: "2px",
-                        }}
-                      >
-                        {mod.description}
-                      </div>
-                    </div>
-                  </label>
-                );
-              })}
-            </div>
+                    <p style={{ fontSize: "11px", fontWeight: 700, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.08em", margin: "0 0 6px" }}>
+                      Always included
+                    </p>
+                    <p style={{ fontSize: "12px", color: "#64748b", margin: 0, lineHeight: "1.6" }}>
+                      Hero · Services · Why Us · Stats · Reviews · FAQ · Contact CTA · Footer
+                    </p>
+                  </div>
+                </div>
+              );
+            })()}
           </Field>
         </div>
 
@@ -1050,9 +1101,9 @@ function BusinessEditor({ existing, onSaved, onCancel }: EditorProps) {
               margin: "0 0 18px",
             }}
           >
-            Goals &amp; Notes
+            Build Notes
           </p>
-          <Field label="Website Goals">
+          <Field label="Website Goals (internal)">
             <textarea
               style={{ ...inputStyle, minHeight: "72px", resize: "vertical" }}
               value={form.websiteGoals}
@@ -1060,7 +1111,7 @@ function BusinessEditor({ existing, onSaved, onCancel }: EditorProps) {
               placeholder="What should the website help the business achieve? e.g. get more quote requests, build trust with residential customers…"
             />
           </Field>
-          <Field label="Quote Form Needs">
+          <Field label="Quote Form Notes (internal)">
             <textarea
               style={{ ...inputStyle, minHeight: "60px", resize: "vertical" }}
               value={form.quoteFormNeeds}

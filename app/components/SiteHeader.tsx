@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useRef } from "react";
+import { useState, useRef, useEffect } from "react";
 import { BUSINESS_TYPE_COUNT } from "@/lib/marketplace/data";
 
 const NAV_LINKS = [
@@ -50,6 +50,13 @@ export default function SiteHeader({
     closeTimeout.current = setTimeout(() => setMenuOpen(false), 150);
   }
 
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onScroll() { setMenuOpen(false); }
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
+  }, [menuOpen]);
+
   return (
     <header className="sticky top-0 z-50 border-b border-black/5 bg-[#f7f5ef]/90 backdrop-blur-md">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 lg:px-8">
@@ -80,8 +87,8 @@ export default function SiteHeader({
                     </svg>
                   </a>
 
-                  {/* Centering wrapper — no animation transforms here */}
-                  <div style={{ position: "absolute", top: "calc(100% + 10px)", left: "50%", transform: "translateX(-50%)", zIndex: 50 }}>
+                  {/* Centering wrapper — pointer-events blocked when closed so hidden panel can't intercept hover */}
+                  <div style={{ position: "absolute", top: "calc(100% + 10px)", left: "50%", transform: "translateX(-50%)", zIndex: 50, pointerEvents: menuOpen ? "auto" : "none" }}>
                     {/* Animated panel */}
                     <div
                       style={{

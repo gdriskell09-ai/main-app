@@ -1713,9 +1713,9 @@ function AiGeneratorSection({ onNavigate }: { onNavigate: (s: Section) => void }
       <div className="mb-2 inline-flex items-center gap-2 rounded-full border border-emerald-200 bg-emerald-50 px-3 py-1 text-xs font-semibold text-emerald-700">
         Live · Powered by Groq (Llama 3.3 70B)
       </div>
-      <h1 className="mt-3 text-2xl font-semibold text-slate-950">AI Website Generator</h1>
+      <h1 className="mt-3 text-2xl font-semibold text-slate-950">Copy Kit</h1>
       <p className="mt-2 max-w-xl text-sm leading-6 text-slate-500">
-        Generate a full website content kit — hero, services, about, process, trust signals, and reviews —
+        Generate a full website copy kit — hero, services, about, process, trust signals, and reviews —
         structured to drop directly into your site template.
       </p>
 
@@ -2034,7 +2034,7 @@ export default function AdminApp() {
       ],
     },
     {
-      label: "CRM",
+      label: "Clients",
       items: [
         { id: "leads",     label: "Leads",     badge: newLeadsCount },
         { id: "customers", label: "Customers" },
@@ -2048,11 +2048,11 @@ export default function AdminApp() {
       ],
     },
     {
-      label: "Modules",
+      label: "Website Builder",
       items: [
-        { id: "contracts",    label: "ContractVault" },
-        { id: "ai_generator", label: "AI Generator"  },
-        { id: "websites",     label: "Websites"      },
+        { id: "websites",     label: "Website Profiles" },
+        { id: "ai_generator", label: "Copy Kit"          },
+        { id: "contracts",    label: "ContractVault"     },
       ],
     },
     {
