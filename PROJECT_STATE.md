@@ -15,7 +15,7 @@
 
 **Important separation rule:** `scrub-club-app` is a separate proof-model pressure washing app at `/Users/grantdriskell/Documents/GitHub/scrub-club-app`. Do not copy assumptions, file paths, schema, or app architecture between repos without explicit approval.
 
-**Current phase:** Phase 3.6 complete (2026-06-28). Generated content timestamp, reset-to-blueprint controls, and staleness indicator shipped. Content preview/inline editing remain parked.
+**Current phase:** Phase 3.7 Slices B+C+D complete (2026-06-28). Business profile storage migrated from localStorage to Supabase. Slice E (localStorage data import) not yet started.
 
 **Current product rule:** the base website builder must work with zero AI keys. Blueprint/fallback generation remains the default. AI and future tool modules are optional roadmap layers unless explicitly approved.
 
@@ -58,7 +58,7 @@ A premium SaaS platform for local service businesses. The core offer is a profes
 | Database | Supabase (PostgreSQL) — partial integration |
 | Auth | Supabase Auth |
 | AI | Groq (llama-3.3-70b-versatile) via server-side only |
-| Storage (profiles) | localStorage — swappable abstraction layer, Supabase migration planned |
+| Storage (profiles) | Supabase (`business_profiles` table) — `lib/business/storage.ts` uses async Supabase calls; Slice E data import pending |
 | Maps | react-leaflet |
 | Middleware | `proxy.ts` (NOT `middleware.ts` — Next.js 16 naming conflict) |
 
@@ -190,7 +190,7 @@ Bug fixed during QA: `premium-minimal` style pack missing from website-preview s
 
 ## 5. Current Stop Point
 
-**Phase 3.6 complete (2026-06-28). Staleness indicator shipped.**
+**Phase 3.7 Slices B+C+D complete (2026-06-28). Business profile storage migrated to Supabase. Slice E not started.**
 
 Phase 3.4d.2 shipped as commit `6540db5`. Phase 3.5 confirmed complete via audit on 2026-06-28 — no new commits required; all components were already present in the repo.
 
@@ -212,13 +212,25 @@ Commit `a5d6673`. Only file changed: `app/components/admin/BusinessSection.tsx`.
 - **Staleness indicator:** profile cards now show a subtle amber "Content may be outdated" badge next to the "Generated [date]" timestamp when `profile.updatedAt` is newer than `generatedContent.generatedAt`.
 - No storage, API, schema, RLS, or preview route changes. Build: 22/22 routes, 0 TypeScript errors.
 
+### Phase 3.7 Slices B+C+D — Business Profile Supabase Storage Migration (complete, 2026-06-28)
+
+Commit `8bb8abb`. Files changed: `lib/business/storage.ts`, `app/components/admin/BusinessSection.tsx`, `app/admin/AdminApp.tsx`, `app/website-preview/[businessId]/page.tsx`.
+
+- **storage.ts rewritten:** all 4 data functions (`getAllProfiles`, `getProfile`, `saveProfile`, `deleteProfile`) are now `async` Supabase calls using `createClient` from `@/lib/supabase/client`. `createId()` remains synchronous. `bp_` profile IDs preserved as Supabase TEXT primary keys. `generatedContent` stored as `generated_content JSONB`. Full camelCase ↔ snake_case column mapping.
+- **Callers updated:** `BusinessSection.tsx` (8 call sites — `load`, `handleDelete`, `handleClear`, `handleGenerate`, `handleSubmit` all await storage calls), `AdminApp.tsx` (1 call site in `CustomerDetail` useEffect wrapped in async IIFE), `[businessId]/page.tsx` (1 call site — `load` callback made async).
+- No RLS policies. No service role client. No share tokens. No preview route refactor. No owner_id enforcement. No schema changes in code.
+- Build: 22/22 routes, 0 TypeScript errors.
+
+**Slice E not yet started (requires separate approval):**
+- Existing localStorage profiles are invisible in admin until a one-time import runs. Slice E: on first authenticated load, read `localStorage["main_app_business_profiles"]`, upsert each profile to Supabase, set `localStorage["bp_migrated"] = "true"`.
+
 ### Phase 3.5 — Generate Website Content (complete, confirmed via audit 2026-06-28)
 
 All three layers of the Generate Website Content flow are implemented and passing build:
 
 - **API route:** `app/api/generate-website-content/route.ts` — accepts POST with `BusinessProfile`, tries Groq if `GROQ_API_KEY` is set, falls back to deterministic blueprint content, validates shape before returning.
 - **Fallback generator:** `lib/business/contentGenerator.ts` — `generateFallbackContent(profile)` — deterministic, blueprint-driven, no AI dependency, produces complete `GeneratedWebsiteContent`.
-- **Admin UI:** `app/components/admin/BusinessSection.tsx` — per-profile "Generate Website Content" / "Regenerate Content" button, loading/success/error state machine, saves returned `generatedContent` to localStorage via `saveProfile`, shows "Blueprint" or "AI Content" source badge.
+- **Admin UI:** `app/components/admin/BusinessSection.tsx` — per-profile "Generate Website Content" / "Regenerate Content" button, loading/success/error state machine, saves returned `generatedContent` via `saveProfile` (now Supabase-backed), shows "Blueprint" or "AI Content" source badge.
 - **Preview path:** `lib/business/profileToWebsiteConfig.ts` already reads `profile.generatedContent` and uses its fields to override blueprint defaults for hero, services, whyChooseUs, stats, FAQs, reviews, and final CTA. No preview changes needed.
 
 Known open items (not blocking):
@@ -226,7 +238,7 @@ Known open items (not blocking):
 - Photographer industry: no blueprint exists; falls to contractor-handyman fallback.
 - Mobile admin UI (post-login): not verified — requires live Supabase credentials.
 - Invoice print route (`/admin/invoice/[id]`): auth-gated, not tested without credentials.
-- Website Profile storage: still localStorage. Supabase migration remains a future item (Section 26).
+- Website Profile storage: migrated to Supabase (Phase 3.7 Slices B+C+D). Existing localStorage profiles require Slice E import to become visible.
 
 Phase 3.3 QA summary (2026-06-27):
 - Lead → Customer → Quote → Job → Invoice: ✅ full flow verified
@@ -578,41 +590,32 @@ Do not build until invoicing and job tracking are live and generating usage.
 
 ## 26. Storage / Database Roadmap
 
-**Current:** localStorage (business profiles only)
-- Abstraction layer in `lib/business/storage.ts`
-- ~~Swap for Supabase by replacing only this file~~ — **INCORRECT. See impact audit below.**
+**Current:** Supabase (`business_profiles` table) — Phase 3.7 Slices B+C+D complete (2026-06-28).
+- `lib/business/storage.ts` uses async Supabase calls via `createClient`.
+- `bp_` profile IDs preserved as TEXT primary key.
+- `generatedContent` stored as `generated_content JSONB` inline.
+- All three caller files updated to `await` storage calls.
 
-**Impact audit findings (2026-06-28):**
-All five storage functions are synchronous. Supabase is async. Migration requires `async/await` propagation into callers:
-- `lib/business/storage.ts` — all 4 data functions become `async`
-- `app/components/admin/BusinessSection.tsx` — 8 call sites; `handleDelete`, `handleClear`, `handleSubmit` must become `async`
-- `app/admin/AdminApp.tsx` — 1 `useEffect` call site
-- `app/website-preview/[businessId]/page.tsx` — 1 `useCallback` call site
-Do not approve a "storage.ts-only" migration — it will produce silent bugs.
+**Slice E — localStorage data import (not yet started, requires approval):**
+On first authenticated admin load: read `localStorage["main_app_business_profiles"]`, upsert each existing profile to Supabase, set `localStorage["bp_migrated"] = "true"`. Until this runs, profiles created before Phase 3.7 are not visible in the admin panel.
 
-**Open decisions blocking migration:**
-1. ~~Preview/RLS strategy~~ — **direction established (2026-06-28), no longer a blocker for the storage migration itself.** Admin reads: strict `owner_id = auth.uid()` RLS. Public preview: separate future slice, gated by `public_preview_enabled` flag and/or share token. Anonymous Supabase reads by profile ID are rejected. Storage migration may proceed independently.
-2. `owner_id` FK: include in first migration slice or add in a later RLS slice?
+**Migration plan status:**
+1. ~~Resolve preview/RLS strategy~~ — done (2026-06-28)
+2. ~~Create `business_profiles` table in Supabase~~ — done (pre-condition for Phase 3.7)
+3. ~~Update `storage.ts` + all three caller files to be async~~ — done (commit `8bb8abb`)
+4. One-time localStorage → Supabase import — **Slice E, not started**
+5. Drop localStorage reads entirely after migration flag is set — **part of Slice E**
 
-**Settled decisions:**
-- `bp_` profile ID format preserved as Supabase text PK — switching to UUIDs breaks all existing preview URLs.
-- `generatedContent` stored as inline JSONB in `business_profiles` (not a separate table) for the first migration.
-- Dual-write (localStorage cache + background Supabase sync) rejected — creates two sources of truth.
-- localStorage dropped entirely after one-time data migration — no offline cache.
-
-**Migration plan (revised, not yet approved):**
-1. Resolve preview/RLS strategy
-2. Create `business_profiles` table in Supabase with `bp_` text PK, `generated_content JSONB`, `customer_id TEXT`, `owner_id TEXT`
-3. Update `storage.ts` + all three caller files to be async (one atomic PR)
-4. One-time migration: on first load, detect existing localStorage data and write to Supabase, then set migration flag
-5. Drop localStorage reads entirely after migration flag is set
-
-**Tables planned (not yet created):**
-- `business_profiles` — one row per client business (includes `generated_content JSONB`)
-- `invoices` — invoice records (exists in Supabase already — `leads`, `customers`, `jobs`, `quotes` exist too)
+**Tables created:**
+- `business_profiles` — one row per client business (`id TEXT PK`, `owner_id TEXT`, `customer_id TEXT`, all profile fields, `generated_content JSONB`, timestamps)
+- `invoices` — exists in Supabase already; `leads`, `customers`, `jobs`, `quotes` exist too
 
 **Not planned as a separate table:**
-- `generated_website_content` — will be inline JSONB in `business_profiles` for the first migration; separate table is a later optimization if needed
+- `generated_website_content` — inline JSONB in `business_profiles`; separate table is a later optimization if needed
+
+**Next open decisions:**
+- `owner_id` enforcement: add RLS policy in a dedicated follow-on slice after Slice E is live and stable.
+- Public/shareable preview: separate future slice gated by `public_preview_enabled` flag and/or share token. Do not build yet.
 
 ---
 
@@ -874,4 +877,4 @@ Every step requires explicit owner approval before anything is published, listed
 
 ---
 
-*Last updated: Phase 3.6 complete (2026-06-28). Staleness indicator shipped. Commit `a5d6673`. Content preview/inline editing parked. Supabase migration parked.*
+*Last updated: Phase 3.7 Slices B+C+D complete (2026-06-28). Business profile storage migrated to Supabase. Commit `8bb8abb`. Slice E (localStorage data import) not yet started.*

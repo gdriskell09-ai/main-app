@@ -1,5 +1,20 @@
 # Decision Log
 
+## 2026-06-28: Phase 3.7 Slices B+C+D — Business Profile Supabase Storage Migration
+
+Commit `8bb8abb`. Files: `lib/business/storage.ts`, `app/components/admin/BusinessSection.tsx`, `app/admin/AdminApp.tsx`, `app/website-preview/[businessId]/page.tsx`.
+
+`storage.ts` fully rewritten with async Supabase calls (`getAllProfiles`, `getProfile`, `saveProfile`, `deleteProfile`). `createId()` stays synchronous. All callers updated to `await` storage functions. Build: 22/22 routes, 0 TypeScript errors.
+
+Key decisions:
+- **One atomic PR** — all four files changed together; TypeScript would not compile with partial async/sync mismatches.
+- **`bp_` IDs as TEXT PK** — `createId()` unchanged; IDs generated in the app and passed to Supabase, preserving all existing preview URLs.
+- **`generatedContent` as inline JSONB** — stored as `generated_content` column; no separate table.
+- **`updated_at` stamped in app layer** — `toRow()` sets `updated_at: now` on every save; no DB trigger required. The returned upserted row carries the timestamp back to callers, keeping the staleness indicator accurate.
+- **`owner_id` not enforced** — column exists in DB as nullable TEXT; no RLS policy added. Enforcement is a follow-on slice after Slice E.
+- **No dual-write** — localStorage reads dropped entirely; Supabase is the single source of truth.
+- **Slice E not yet started** — existing localStorage profiles are invisible until a one-time import step (`localStorage["main_app_business_profiles"]` → Supabase upsert → set `bp_migrated` flag) is approved and built.
+
 ## 2026-06-28: Phase 3.6 Slice 2A — Generated Content Staleness Indicator
 
 Commit `a5d6673`. File: `app/components/admin/BusinessSection.tsx` only.
