@@ -347,6 +347,11 @@ export default function BusinessSection() {
           {profiles.map((p) => {
             const packColor =
               STYLE_PACKS.find((s) => s.id === p.preferredStylePack)?.color ?? "#0ea5e9";
+            const isStale = !!(
+              p.updatedAt &&
+              p.generatedContent?.generatedAt &&
+              new Date(p.updatedAt) > new Date(p.generatedContent.generatedAt)
+            );
             return (
               <div
                 key={p.id}
@@ -533,9 +538,26 @@ export default function BusinessSection() {
                 {/* Generated content timestamp + clear */}
                 {p.generatedContent && (
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
-                    <span style={{ fontSize: "11px", color: "#94a3b8" }}>
-                      Generated {new Date(p.generatedContent.generatedAt).toLocaleDateString()}
-                    </span>
+                    <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                      <span style={{ fontSize: "11px", color: "#94a3b8" }}>
+                        Generated {new Date(p.generatedContent.generatedAt).toLocaleDateString()}
+                      </span>
+                      {isStale && (
+                        <span
+                          style={{
+                            fontSize: "11px",
+                            fontWeight: 500,
+                            color: "#92400e",
+                            background: "#fef3c7",
+                            borderRadius: "5px",
+                            padding: "1px 7px",
+                            border: "1px solid #fde68a",
+                          }}
+                        >
+                          Content may be outdated
+                        </span>
+                      )}
+                    </div>
                     {clearConfirm[p.id] ? (
                       <div style={{ display: "flex", gap: "6px" }}>
                         <button
