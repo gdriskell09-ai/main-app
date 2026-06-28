@@ -42,7 +42,7 @@ export default function LandscapingDemo() {
         <div className="mx-auto max-w-6xl">
           <div className="max-w-2xl">
             <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-sm text-green-200">
-              ⭐ 4.8 stars · Serving [Your City] since 2017
+              ⭐ 4.8 stars · Serving your area since 2017
             </div>
             <h1 className="text-5xl font-bold leading-tight lg:text-6xl">
               Your Yard, Done Right.
@@ -127,7 +127,7 @@ export default function LandscapingDemo() {
         <div className="mx-auto max-w-6xl flex flex-col items-center gap-4 text-center text-sm md:flex-row md:justify-between md:text-left">
           <div>
             <p className="font-bold text-white">GreenEdge Lawn & Landscaping</p>
-            <p className="mt-1">Serving [Your City] and surrounding areas since 2017</p>
+            <p className="mt-1">Serving your area and surrounding areas since 2017</p>
           </div>
           <div className="space-y-1">
             <p>📞 (555) 420-0900</p>

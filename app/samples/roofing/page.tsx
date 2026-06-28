@@ -42,14 +42,14 @@ export default function RoofingDemo() {
         <div className="mx-auto max-w-6xl">
           <div className="max-w-2xl">
             <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-sm text-slate-300">
-              ⭐ 4.9 · GAF Certified · [Your City]
+              ⭐ 4.9 · GAF Certified · Licensed & Insured
             </div>
             <h1 className="text-5xl font-bold leading-tight lg:text-6xl">
               Your Roof.
               <span className="block text-red-400">Our Reputation.</span>
             </h1>
             <p className="mt-5 text-xl leading-relaxed text-slate-300">
-              Licensed, certified, and insurance-approved. Ridge Line Roofing handles repairs, replacements, and storm claims across [Your City] and surrounding counties.
+              Licensed, certified, and insurance-approved. Ridge Line Roofing handles repairs, replacements, and storm claims across your area and surrounding counties.
             </p>
             <div className="mt-8 flex flex-col gap-4 sm:flex-row">
               <a href="/contact" className="rounded-full bg-red-600 px-8 py-4 text-base font-bold text-white transition hover:bg-red-700">
@@ -123,7 +123,7 @@ export default function RoofingDemo() {
       </section>
 
       <footer className="bg-[#0f1a26] px-6 py-8 text-center text-xs text-slate-600">
-        © 2026 Ridge Line Roofing · Licensed & Insured · GAF Certified · [Your City]
+        © 2026 Ridge Line Roofing · Licensed & Insured · GAF Certified
       </footer>
     </div>
   );

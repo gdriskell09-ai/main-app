@@ -15,7 +15,7 @@
 
 **Important separation rule:** `scrub-club-app` is a separate proof-model pressure washing app at `/Users/grantdriskell/Documents/GitHub/scrub-club-app`. Do not copy assumptions, file paths, schema, or app architecture between repos without explicit approval.
 
-**Current phase:** Phase 3.25 complete. Phase 3.3 first pass complete (Connected Sales + Service Flow: customer type badges, smart suggestions, website profile linking, quote/job/invoice flow improvements). Phase 3.3 QA has not yet been run — do not mark Phase 3.3 fully complete until QA is done.
+**Current phase:** Phase 3.3 complete (2026-06-27). Connected Sales + Service Flow QA passed. One bug fixed during QA: `premium-minimal` style pack was missing from the website-preview switcher (now corrected). Also fixed: 16 `[Your City]` placeholders across 6 sample pages, stale "6 packs" count in docs. Phase 3.4 not yet started.
 
 **Current product rule:** the base website builder must work with zero AI keys. Blueprint/fallback generation remains the default. AI and future tool modules are optional roadmap layers unless explicitly approved.
 
@@ -162,9 +162,25 @@ Business profile creation and management with localStorage storage and dynamic p
 
 ## 5. Current Stop Point
 
-**Phase 3.25 complete. Phase 3.3 first pass complete. Phase 3.3 QA pending.**
+**Phase 3.3 complete (2026-06-27). QA passed. Phase 3.4 not started.**
 
-Phase 3.3 scope: Connected Sales + Service Flow — customer type badges, smart suggestions, website profile linking, quote/job/invoice flow improvements. First pass is done; QA has not yet been run.
+Phase 3.3 QA results (end-to-end code review + Playwright visual checks):
+- Lead → Customer: ✅ status gate enforced, customer record creates and navigates correctly
+- Customer → Website Profile: ✅ localStorage profile creates with pre-filled industry/contact data
+- Website Profile → Preview/Edit: ✅ preview link and "Edit" nav both work
+- Quote → Job: ✅ "→ Job" button on accepted quotes, prefills title and notes
+- Job → Invoice: ✅ "→ Invoice" button on complete jobs, prefills from last accepted quote
+- Old/existing records: ✅ all data loaded on mount via loadLeads/loadCustomers
+- Mobile layout: ✅ login page responsive at 390px; admin (post-auth) not testable without credentials
+- Sample pages: ✅ all 8 sample pages render, 0 console errors
+- Build: ✅ 22/22 routes, TypeScript clean
+
+Bug fixed during QA: `premium-minimal` style pack was absent from the website-preview page's pack switcher — added.
+
+Known limitations:
+- Mobile admin UI (post-login) not verified — requires live Supabase credentials
+- Invoice print route (`/admin/invoice/[id]`) auth-gated, not tested without credentials
+- Password reset is in Settings (post-login), not on the login page
 
 See Section 30 for the original Phase 3 spec.
 
@@ -573,7 +589,7 @@ When starting a new session:
 - Adding sections: types → component → REGISTRY → `buildSection` switch → blueprint
 - Storage: all profile reads/writes through `lib/business/storage.ts` only
 - AI calls: server-side only, via `/api/` routes, never from client components
-- Style packs: 6 packs, IDs are type-safe `StylePackId`
+- Style packs: 7 packs, IDs are type-safe `StylePackId`
 - Industry matching: `getBlueprint(industry)` handles fuzzy matching + fallback
 
 ---
@@ -788,4 +804,4 @@ Every step requires explicit owner approval before anything is published, listed
 
 ---
 
-*Last updated: Phase 3.25 complete. Phase 3.3 first pass complete (Connected Sales + Service Flow: customer type badges, smart suggestions, website profile linking, quote/job/invoice flow improvements). Phase 3.3 QA pending — do not treat as fully complete until QA is done.*
+*Last updated: Phase 3.3 complete (2026-06-27). QA passed. Bug fixed: premium-minimal missing from website-preview switcher. Fixed 16 [Your City] placeholders and stale "6 packs" count. Phase 3.4 not started.*

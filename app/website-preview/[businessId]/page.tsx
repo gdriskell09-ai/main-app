@@ -9,12 +9,13 @@ import type { BusinessProfile } from "@/lib/business/types";
 import type { StylePackId, WebsiteConfig } from "@/lib/website-engine/types";
 
 const PACKS: { id: StylePackId; label: string; color: string }[] = [
-  { id: "bold-contractor", label: "Bold Contractor", color: "#ea580c" },
-  { id: "clean-pro",       label: "Clean Pro",       color: "#0ea5e9" },
-  { id: "luxury-dark",     label: "Luxury Dark",     color: "#c9a227" },
-  { id: "premium-glass",   label: "Premium Glass",   color: "#4f46e5" },
-  { id: "high-energy",     label: "High Energy",     color: "#ef4444" },
-  { id: "playful-bright",  label: "Playful Bright",  color: "#f43f5e" },
+  { id: "bold-contractor",  label: "Bold Contractor",  color: "#ea580c" },
+  { id: "clean-pro",        label: "Clean Pro",        color: "#0ea5e9" },
+  { id: "luxury-dark",      label: "Luxury Dark",      color: "#c9a227" },
+  { id: "premium-glass",    label: "Premium Glass",    color: "#4f46e5" },
+  { id: "high-energy",      label: "High Energy",      color: "#ef4444" },
+  { id: "playful-bright",   label: "Playful Bright",   color: "#f43f5e" },
+  { id: "premium-minimal",  label: "Premium Minimal",  color: "#2d6a4f" },
 ];
 
 interface PageProps {

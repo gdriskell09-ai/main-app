@@ -45,7 +45,7 @@ export default function BarbershopDemo() {
       <section className="px-6 py-28 lg:py-36">
         <div className="mx-auto max-w-5xl">
           <div className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-2 text-sm text-amber-400 mb-6">
-            ⭐ 4.9 · Walk-ins welcome · [Your City]
+            ⭐ 4.9 · Walk-ins welcome · Locally Owned
           </div>
           <h1 className="max-w-2xl text-6xl font-black leading-none tracking-tighter lg:text-7xl">
             Fresh Cuts.<br />
@@ -140,7 +140,7 @@ export default function BarbershopDemo() {
             <p className="text-sm font-bold uppercase tracking-widest text-amber-500 mb-2">Location</p>
             <h2 className="text-3xl font-black text-white mb-6">Find Us</h2>
             <div className="space-y-3 text-sm text-slate-400">
-              <p>📍 123 Main Street, Suite 100<br />[Your City] 00000</p>
+              <p>📍 123 Main Street, Suite 100<br />Your City, ST 00000</p>
               <p>📞 (555) 832-0700</p>
               <p>✉️ freshcuts@example.com</p>
             </div>
@@ -153,7 +153,7 @@ export default function BarbershopDemo() {
 
       {/* Footer */}
       <footer className="border-t border-white/5 px-6 py-8 text-center text-xs text-slate-600">
-        © 2026 Fresh Cuts Barbershop · [Your City] · All rights reserved
+        © 2026 Fresh Cuts Barbershop · All rights reserved
       </footer>
     </div>
   );

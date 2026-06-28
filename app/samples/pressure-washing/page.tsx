@@ -81,14 +81,14 @@ export default function PressureWashingDemo() {
         <div className="relative mx-auto max-w-6xl">
           <div className="max-w-2xl">
             <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-2 text-sm font-medium text-emerald-300">
-              ⭐ 4.9 stars · 200+ reviews in [Your City]
+              ⭐ 4.9 stars · 200+ 5-star reviews
             </div>
             <h1 className="text-5xl font-bold leading-tight tracking-tight lg:text-6xl">
               Professional Pressure Washing
               <span className="block text-orange-400">You Can Trust.</span>
             </h1>
             <p className="mt-6 text-xl leading-relaxed text-slate-300">
-              Licensed, insured, and satisfaction guaranteed. We restore homes, driveways, decks, and roofs across [Your City] and surrounding areas.
+              Licensed, insured, and satisfaction guaranteed. We restore homes, driveways, decks, and roofs across your area.
             </p>
             <div className="mt-10 flex flex-col gap-4 sm:flex-row">
               <a
@@ -287,14 +287,14 @@ export default function PressureWashingDemo() {
           <div className="grid gap-8 md:grid-cols-3">
             <div>
               <p className="text-lg font-bold text-white">ShineLine Pressure Washing</p>
-              <p className="mt-2 text-sm leading-6">Professional exterior cleaning for homes and businesses in [Your City] and surrounding areas.</p>
+              <p className="mt-2 text-sm leading-6">Professional exterior cleaning for homes and businesses in your area.</p>
             </div>
             <div>
               <p className="font-semibold text-white">Contact</p>
               <div className="mt-3 space-y-2 text-sm">
                 <p>📞 (555) 246-0000</p>
                 <p>✉️ hello@shineline.com</p>
-                <p>📍 [Your City]</p>
+                <p>📍 Your Service Area</p>
               </div>
             </div>
             <div>

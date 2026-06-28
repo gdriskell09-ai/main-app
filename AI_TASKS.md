@@ -8,6 +8,11 @@
 - Read `PROJECT_STATE.md` and `docs/phase-rules.md` before implementation work.
 - Do not edit `PROJECT_STATE.md` unless the user asks for docs/status updates.
 
+## Phase Status
+
+- Phase 3.3 complete (2026-06-27) — Connected Sales + Service Flow, QA passed.
+- Phase 3.4 not started. Do not begin Phase 3.4 work without explicit user approval.
+
 ## Current Approved Work
 
 - Roadmap and documentation organization.

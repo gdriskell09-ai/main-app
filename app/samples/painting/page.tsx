@@ -42,7 +42,7 @@ export default function PaintingDemo() {
         <div className="mx-auto max-w-6xl">
           <div className="max-w-2xl">
             <div className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-white/10 px-4 py-1.5 text-sm text-slate-300">
-              ⭐ 4.9 · Licensed & Insured · [Your City]
+              ⭐ 4.9 · Licensed & Insured · Locally Owned
             </div>
             <h1 className="text-5xl font-bold leading-tight tracking-tight lg:text-6xl">
               Painting done the
@@ -154,7 +154,7 @@ export default function PaintingDemo() {
 
       {/* Footer */}
       <footer className="bg-black px-6 py-8 text-center text-xs text-slate-600">
-        © 2026 Apex Painting Co. · Licensed & Insured · [Your City]
+        © 2026 Apex Painting Co. · Licensed & Insured
       </footer>
     </div>
   );
