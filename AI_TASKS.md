@@ -11,7 +11,8 @@
 ## Phase Status
 
 - Phase 3.3 complete (2026-06-27) — Connected Sales + Service Flow, QA passed.
-- Phase 3.4 not started. Do not begin Phase 3.4 work without explicit user approval.
+- Phase 3.4 complete (2026-06-28) — Website Builder polish + unified creation flow. Last commit: `6540db5`.
+- Phase 3.5 not started. Do not begin Phase 3.5 work without explicit user approval.
 
 ## Current Approved Work
 

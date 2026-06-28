@@ -15,7 +15,7 @@
 
 **Important separation rule:** `scrub-club-app` is a separate proof-model pressure washing app at `/Users/grantdriskell/Documents/GitHub/scrub-club-app`. Do not copy assumptions, file paths, schema, or app architecture between repos without explicit approval.
 
-**Current phase:** Phase 3.3 complete (2026-06-27). Connected Sales + Service Flow QA passed. One bug fixed during QA: `premium-minimal` style pack was missing from the website-preview switcher (now corrected). Also fixed: 16 `[Your City]` placeholders across 6 sample pages, stale "6 packs" count in docs. Phase 3.4 not yet started.
+**Current phase:** Phase 3.4d.2 complete (2026-06-28). Unified website profile creation flow shipped. Phase 3.5 not yet started.
 
 **Current product rule:** the base website builder must work with zero AI keys. Blueprint/fallback generation remains the default. AI and future tool modules are optional roadmap layers unless explicitly approved.
 
@@ -158,29 +158,54 @@ Business profile creation and management with localStorage storage and dynamic p
 - Added Gym / Fitness Studio, Personal Trainer, Barber / Salon, Restaurant / Cafe to admin dropdown
 - Verified build: 22/22 routes, 0 TypeScript errors
 
+### Phase 3.3 — Connected Sales + Service Flow (complete, 2026-06-27)
+End-to-end Lead → Customer → Website Profile → Quote → Job → Invoice flow. QA passed.
+
+Bug fixed during QA: `premium-minimal` style pack missing from website-preview switcher. Fixed 16 `[Your City]` placeholders across 6 sample pages.
+
+### Phase 3.4 — Website Builder Polish + Unified Creation Flow (complete, 2026-06-28)
+
+**3.4a/c (2026-06-27):** Nav reorder — Website Builder above Clients; ContractVault labeled "Soon." Industry-aware fallback content: trust badges, gallery headings, reviews, and footer CTA now vary by blueprint. Added `reviewsDefaults` to 5 non-contractor blueprints. Industry-aware style pack auto-set on first selection in editor. Fixed Quote Form Notes placeholder copy. Barbershop sample page placeholder address fixed.
+
+**3.4d.1 (2026-06-28):** Blueprint-aware style pack on Customer → Create Website Profile path. Blank city instead of address string. "Website Profiles" h2 + "+ New Profile" button label. "Client ↗" badge on customer-linked profile cards.
+
+**3.4d.2 (2026-06-28):** Unified website profile creation flow. All three entry points (Customer panel, Copy Kit, manual) now share one editor:
+- Customer → "+ Create Website Profile" opens prefilled editor instead of auto-saving a stub
+- Copy Kit → "Start Website Profile →" seeds editor with name/industry/city/services/tagline (GeneratedCopy not stored as generatedContent — schemas differ)
+- Preview toolbar: "← Profiles" returns to Website Profiles section, "Edit Profile" opens that profile's editor directly, "Copy Link" copies the preview URL
+- BusinessSection on mount picks up pending draft or pending edit from sessionStorage automatically
+- `customer_id` now preserved through profile edits (was silently dropped before)
+
+**Files added in 3.4:**
+- `lib/business/draftProfile.ts` — sessionStorage draft/pending-edit/nav-target bus with 10-min TTL
+
+**Files changed in 3.4:**
+- `app/admin/AdminApp.tsx`, `app/components/admin/BusinessSection.tsx`
+- `app/website-preview/[businessId]/page.tsx`
+- `lib/business/blueprints/registry.ts`, `lib/business/profileToWebsiteConfig.ts`
+- `lib/website-engine/types.ts`
+- `app/components/website-engine/sections/HeroAnimated.tsx`, `FooterPremium.tsx`
+
 ---
 
 ## 5. Current Stop Point
 
-**Phase 3.3 complete (2026-06-27). QA passed. Phase 3.4 not started.**
+**Phase 3.4d.2 complete (2026-06-28). Phase 3.5 not yet started.**
 
-Phase 3.3 QA results (end-to-end code review + Playwright visual checks):
-- Lead → Customer: ✅ status gate enforced, customer record creates and navigates correctly
-- Customer → Website Profile: ✅ localStorage profile creates with pre-filled industry/contact data
-- Website Profile → Preview/Edit: ✅ preview link and "Edit" nav both work
-- Quote → Job: ✅ "→ Job" button on accepted quotes, prefills title and notes
-- Job → Invoice: ✅ "→ Invoice" button on complete jobs, prefills from last accepted quote
-- Old/existing records: ✅ all data loaded on mount via loadLeads/loadCustomers
-- Mobile layout: ✅ login page responsive at 390px; admin (post-auth) not testable without credentials
-- Sample pages: ✅ all 8 sample pages render, 0 console errors
+Phase 3.4d.2 shipped as commit `6540db5`. Build passes: 22/22 routes, TypeScript clean.
+
+Known open items (not blocking):
+- Copy Kit → Website Profile: `GeneratedCopy` and `GeneratedWebsiteContent` schemas remain separate by design. The bridge is field-extraction only (name, industry, city, service titles, tagline). Full content migration not planned.
+- Photographer industry: no blueprint exists; falls to contractor-handyman fallback.
+- Mobile admin UI (post-login): not verified — requires live Supabase credentials.
+- Invoice print route (`/admin/invoice/[id]`): auth-gated, not tested without credentials.
+- Website Profile storage: still localStorage. Supabase migration remains a future item (Section 26).
+
+Phase 3.3 QA summary (2026-06-27):
+- Lead → Customer → Quote → Job → Invoice: ✅ full flow verified
+- Customer → Website Profile → Preview/Edit: ✅ working
+- 8 sample pages: ✅ render, 0 console errors
 - Build: ✅ 22/22 routes, TypeScript clean
-
-Bug fixed during QA: `premium-minimal` style pack was absent from the website-preview page's pack switcher — added.
-
-Known limitations:
-- Mobile admin UI (post-login) not verified — requires live Supabase credentials
-- Invoice print route (`/admin/invoice/[id]`) auth-gated, not tested without credentials
-- Password reset is in Settings (post-login), not on the login page
 
 See Section 30 for the original Phase 3 spec.
 
@@ -804,4 +829,4 @@ Every step requires explicit owner approval before anything is published, listed
 
 ---
 
-*Last updated: Phase 3.3 complete (2026-06-27). QA passed. Bug fixed: premium-minimal missing from website-preview switcher. Fixed 16 [Your City] placeholders and stale "6 packs" count. Phase 3.4 not started.*
+*Last updated: Phase 3.4d.2 complete (2026-06-28). Unified website profile creation flow. Commit `6540db5`. Phase 3.5 not started.*
