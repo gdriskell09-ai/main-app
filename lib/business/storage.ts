@@ -124,3 +124,36 @@ export async function deleteProfile(id: string): Promise<void> {
 export function createId(): string {
   return `bp_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`;
 }
+
+export async function migrateLocalStorageProfiles(): Promise<void> {
+  if (typeof window === "undefined") return;
+  if (localStorage.getItem("bp_migrated") === "true") return;
+
+  const raw = localStorage.getItem("main_app_business_profiles");
+  if (!raw) {
+    localStorage.setItem("bp_migrated", "true");
+    return;
+  }
+
+  let profiles: BusinessProfile[];
+  try {
+    const parsed: unknown = JSON.parse(raw);
+    if (!Array.isArray(parsed) || parsed.length === 0) {
+      localStorage.setItem("bp_migrated", "true");
+      return;
+    }
+    profiles = parsed as BusinessProfile[];
+  } catch {
+    localStorage.setItem("bp_migrated", "true");
+    return;
+  }
+
+  try {
+    for (const profile of profiles) {
+      await saveProfile(profile);
+    }
+    localStorage.setItem("bp_migrated", "true");
+  } catch {
+    // flag stays unset — will retry on next load
+  }
+}

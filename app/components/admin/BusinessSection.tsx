@@ -9,6 +9,7 @@ import {
   saveProfile,
   deleteProfile,
   createId,
+  migrateLocalStorageProfiles,
 } from "@/lib/business/storage";
 import { getBlueprint } from "@/lib/business/blueprints/index";
 import {
@@ -150,27 +151,30 @@ export default function BusinessSection() {
   }, []);
 
   useEffect(() => {
-    void load();
-    // Consume a pending draft (from Customer panel or Copy Kit)
-    const draft = consumeWebsiteProfileDraft();
-    if (draft) {
-      setPrefillData(draft);
-      setEditing(null);
-      setView("create");
-      return;
-    }
-    // Consume a pending edit (from preview page or Customer Edit button)
-    const pendingId = consumeWebsiteProfilePendingEdit();
-    if (pendingId) {
-      (async () => {
-        const profiles = await getAllProfiles();
-        const target = profiles.find((p) => p.id === pendingId);
-        if (target) {
-          setEditing(target);
-          setView("edit");
-        }
-      })();
-    }
+    void (async () => {
+      await migrateLocalStorageProfiles();
+      void load();
+      // Consume a pending draft (from Customer panel or Copy Kit)
+      const draft = consumeWebsiteProfileDraft();
+      if (draft) {
+        setPrefillData(draft);
+        setEditing(null);
+        setView("create");
+        return;
+      }
+      // Consume a pending edit (from preview page or Customer Edit button)
+      const pendingId = consumeWebsiteProfilePendingEdit();
+      if (pendingId) {
+        (async () => {
+          const profiles = await getAllProfiles();
+          const target = profiles.find((p) => p.id === pendingId);
+          if (target) {
+            setEditing(target);
+            setView("edit");
+          }
+        })();
+      }
+    })();
   }, [load]);
 
   function openCreate() {
