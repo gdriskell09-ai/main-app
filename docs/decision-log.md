@@ -1,5 +1,20 @@
 # Decision Log
 
+## 2026-06-28: Phase 3.6 Slice 1 — Generated Content Timestamp + Reset Controls
+
+Commit `27f2091`. File: `app/components/admin/BusinessSection.tsx` only.
+
+Added to website profile cards when `generatedContent` exists:
+- "Generated [date]" timestamp using `generatedContent.generatedAt`
+- "Reset to blueprint" button with two-step confirm (matches existing delete confirm pattern)
+- Confirm calls `saveProfile({ ...p, generatedContent: undefined })` through existing storage abstraction and resets generate button to idle
+
+Key decisions:
+- **Confirm step required** — clearing generated content is irreversible (no undo); two-step confirm prevents accidental clears.
+- **Storage via saveProfile only** — no direct localStorage access; consistent with the existing abstraction rule.
+- **Staleness indicator deferred** — defining "stale" requires deciding which profile field changes actually invalidate copy (services, industry, city, description — not style pack). Deferred to Phase 3.6 Slice 2 after explicit approval.
+- **Content preview deferred** — showing generated copy on the card risks scope creep toward inline editing. Parked as a separate slice.
+
 ## 2026-06-28: Phase 3.5 — Generate Website Content (confirmed complete via audit)
 
 Phase 3.5 was confirmed complete via a read-only audit on 2026-06-28. No new code was written. All three layers were already present in the repo:

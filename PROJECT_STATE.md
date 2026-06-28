@@ -15,7 +15,7 @@
 
 **Important separation rule:** `scrub-club-app` is a separate proof-model pressure washing app at `/Users/grantdriskell/Documents/GitHub/scrub-club-app`. Do not copy assumptions, file paths, schema, or app architecture between repos without explicit approval.
 
-**Current phase:** Phase 3.5 complete (2026-06-28). Generate Website Content flow confirmed present in repo. Phase 3.6 not yet started.
+**Current phase:** Phase 3.6 Slice 1 complete (2026-06-28). Generated content timestamp and reset-to-blueprint controls shipped. Phase 3.6 Slice 2 not yet started.
 
 **Current product rule:** the base website builder must work with zero AI keys. Blueprint/fallback generation remains the default. AI and future tool modules are optional roadmap layers unless explicitly approved.
 
@@ -190,9 +190,20 @@ Bug fixed during QA: `premium-minimal` style pack missing from website-preview s
 
 ## 5. Current Stop Point
 
-**Phase 3.5 complete (2026-06-28). Phase 3.6 not yet started.**
+**Phase 3.6 Slice 1 complete (2026-06-28). Phase 3.6 Slice 2 not yet started.**
 
 Phase 3.4d.2 shipped as commit `6540db5`. Phase 3.5 confirmed complete via audit on 2026-06-28 — no new commits required; all components were already present in the repo.
+
+### Phase 3.6 Slice 1 — Generated Content Visibility + Reset Controls (complete, 2026-06-28)
+
+Commit `27f2091`. Only file changed: `app/components/admin/BusinessSection.tsx`.
+
+- **Timestamp:** profile cards now show "Generated [date]" when `generatedContent` exists, using `generatedContent.generatedAt`.
+- **Reset to Blueprint:** a "Reset to blueprint" button appears on cards with generated content. First click shows a confirm row ("Confirm clear" + "Cancel") matching the existing delete confirm pattern. Confirming calls `saveProfile({ ...p, generatedContent: undefined })` through the existing storage abstraction and resets the generate button to idle.
+
+**Not yet implemented (parked, require separate approval):**
+- Staleness indicator (flag when `profile.updatedAt` > `generatedContent.generatedAt`)
+- Content preview/read-only headline display on card
 
 ### Phase 3.5 — Generate Website Content (complete, confirmed via audit 2026-06-28)
 
@@ -838,4 +849,4 @@ Every step requires explicit owner approval before anything is published, listed
 
 ---
 
-*Last updated: Phase 3.5 complete (2026-06-28). Generate Website Content flow confirmed present in repo via audit. Last app commit `6540db5`. Phase 3.6 not started.*
+*Last updated: Phase 3.6 Slice 1 complete (2026-06-28). Generated content timestamp and reset-to-blueprint controls. Commit `27f2091`. Phase 3.6 Slice 2 not started.*
