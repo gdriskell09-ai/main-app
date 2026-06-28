@@ -6,8 +6,12 @@ import { createClient } from "@/lib/supabase/client";
 import { useRouter } from "next/navigation";
 import BusinessSection from "@/app/components/admin/BusinessSection";
 import type { BusinessProfile } from "@/lib/business/types";
-import { getAllProfiles, saveProfile, createId } from "@/lib/business/storage";
-import { getBlueprint } from "@/lib/business/blueprints/index";
+import { getAllProfiles } from "@/lib/business/storage";
+import {
+  createWebsiteProfileDraft,
+  createWebsiteProfilePendingEdit,
+  consumeNavTarget,
+} from "@/lib/business/draftProfile";
 
 const LeadMapComponent   = dynamic(() => import("./LeadMap"),    { ssr: false });
 const CanvassMapComponent = dynamic(() => import("./CanvassMap"), { ssr: false });
@@ -594,7 +598,6 @@ function CustomerDetail({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [submitting, setSubmitting]       = useState(false);
   const [profiles, setProfiles]           = useState<BusinessProfile[]>([]);
-  const [profileCreating, setProfileCreating] = useState(false);
 
   useEffect(() => { setProfiles(getAllProfiles()); }, []);
 
@@ -715,30 +718,17 @@ function CustomerDetail({
   }
 
   function handleCreateWebsiteProfile() {
-    setProfileCreating(true);
-    const p: BusinessProfile = {
-      id: createId(),
+    createWebsiteProfileDraft({
       customer_id: customer.id,
       businessName: customer.business || customer.name,
       industry: bizType || "",
       phone: customer.phone || "",
       email: customer.email || "",
       city: "",
-      serviceArea: "",
-      brandColor: "#0ea5e9",
-      logoUrl: "",
-      services: [],
       businessDescription: linkedLead?.message || "",
-      preferredStylePack: getBlueprint(bizType || "").recommendedStylePacks[0],
-      desiredCustomModules: [],
       websiteGoals: linkedLead?.need || "",
-      quoteFormNeeds: "",
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString(),
-    };
-    saveProfile(p);
-    setProfiles(getAllProfiles());
-    setProfileCreating(false);
+    });
+    onNavigate("websites");
   }
 
   return (
@@ -794,9 +784,9 @@ function CustomerDetail({
         <div className="mb-2 flex items-center justify-between">
           <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">Website Profile</p>
           {!linkedProfile && (
-            <button onClick={handleCreateWebsiteProfile} disabled={profileCreating}
-              className="rounded-full border border-black/10 px-3 py-1 text-xs font-medium text-slate-600 transition hover:border-violet-400 hover:bg-violet-50 hover:text-violet-700 disabled:opacity-50">
-              {profileCreating ? "Creating…" : "+ Create Website Profile"}
+            <button onClick={handleCreateWebsiteProfile}
+              className="rounded-full border border-black/10 px-3 py-1 text-xs font-medium text-slate-600 transition hover:border-violet-400 hover:bg-violet-50 hover:text-violet-700">
+              + Create Website Profile
             </button>
           )}
         </div>
@@ -812,7 +802,7 @@ function CustomerDetail({
                   className="rounded-full bg-slate-950 px-3 py-1 text-xs font-semibold text-white transition hover:bg-slate-800">
                   Preview ↗
                 </a>
-                <button onClick={() => onNavigate("websites")}
+                <button onClick={() => { createWebsiteProfilePendingEdit(linkedProfile.id); onNavigate("websites"); }}
                   className="rounded-full border border-black/10 px-3 py-1 text-xs font-medium text-slate-600 transition hover:border-slate-400">
                   Edit
                 </button>
@@ -1859,11 +1849,20 @@ function AiGeneratorSection({ onNavigate }: { onNavigate: (s: Section) => void }
 
               <div className="flex items-center gap-3">
                 <button
-                  onClick={() => onNavigate("websites")}
+                  onClick={() => {
+                    createWebsiteProfileDraft({
+                      businessName: bizName,
+                      industry: bizType,
+                      city,
+                      services: generated.services.map((s) => s.title),
+                      businessDescription: generated.tagline,
+                    });
+                    onNavigate("websites");
+                  }}
                   className="rounded-full bg-slate-950 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-slate-800">
-                  Build this site in admin →
+                  Start Website Profile →
                 </button>
-                <span className="text-xs text-slate-400">Saves to Business Profiles → live preview</span>
+                <span className="text-xs text-slate-400">Opens prefilled editor — review and save</span>
               </div>
             </div>
           ) : (
@@ -1888,7 +1887,10 @@ export default function AdminApp() {
   const router = useRouter();
   const supabase = createClient();
 
-  const [section, setSection] = useState<Section>("dashboard");
+  const [section, setSection] = useState<Section>(() => {
+    const nav = consumeNavTarget();
+    return nav === "websites" ? "websites" : "dashboard";
+  });
   const [leads, setLeads] = useState<Lead[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);

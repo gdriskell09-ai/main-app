@@ -7,6 +7,7 @@ import { getProfile } from "@/lib/business/storage";
 import { profileToWebsiteConfig } from "@/lib/business/profileToWebsiteConfig";
 import type { BusinessProfile } from "@/lib/business/types";
 import type { StylePackId, WebsiteConfig } from "@/lib/website-engine/types";
+import { createWebsiteProfilePendingEdit, setNavTarget } from "@/lib/business/draftProfile";
 
 const PACKS: { id: StylePackId; label: string; color: string }[] = [
   { id: "bold-contractor",  label: "Bold Contractor",  color: "#ea580c" },
@@ -29,6 +30,7 @@ export default function BusinessPreviewPage({ params }: PageProps) {
   const [notFound, setNotFound] = useState(false);
   const [pack, setPack]         = useState<StylePackId | null>(null);
   const [config, setConfig]     = useState<WebsiteConfig | null>(null);
+  const [linkCopied, setLinkCopied] = useState(false);
 
   const load = useCallback(() => {
     const p = getProfile(businessId);
@@ -150,6 +152,7 @@ export default function BusinessPreviewPage({ params }: PageProps) {
             {/* Back link */}
             <a
               href="/admin"
+              onClick={() => setNavTarget("websites")}
               style={{
                 flexShrink: 0,
                 fontSize: "12px",
@@ -159,12 +162,60 @@ export default function BusinessPreviewPage({ params }: PageProps) {
                 padding: "6px 12px",
                 borderRadius: "7px",
                 border: "1px solid rgba(255,255,255,0.10)",
-                marginRight: "4px",
                 whiteSpace: "nowrap",
               }}
             >
-              ← Admin
+              ← Profiles
             </a>
+
+            {/* Edit Profile */}
+            <button
+              onClick={() => {
+                if (profile) createWebsiteProfilePendingEdit(profile.id);
+                setNavTarget("websites");
+                window.location.href = "/admin";
+              }}
+              style={{
+                flexShrink: 0,
+                fontSize: "12px",
+                fontWeight: 600,
+                color: "#f1f5f9",
+                background: "rgba(255,255,255,0.08)",
+                border: "1px solid rgba(255,255,255,0.12)",
+                borderRadius: "7px",
+                padding: "6px 12px",
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+                marginRight: "4px",
+              }}
+            >
+              Edit Profile
+            </button>
+
+            {/* Copy Link */}
+            <button
+              onClick={() => {
+                navigator.clipboard.writeText(window.location.href);
+                setLinkCopied(true);
+                setTimeout(() => setLinkCopied(false), 2000);
+              }}
+              style={{
+                flexShrink: 0,
+                fontSize: "12px",
+                fontWeight: 600,
+                color: linkCopied ? "#34d399" : "#475569",
+                background: "transparent",
+                border: "1px solid rgba(255,255,255,0.10)",
+                borderRadius: "7px",
+                padding: "6px 12px",
+                cursor: "pointer",
+                whiteSpace: "nowrap",
+                transition: "color 0.15s ease",
+                marginRight: "4px",
+              }}
+            >
+              {linkCopied ? "Copied ✓" : "Copy Link"}
+            </button>
 
             {/* Business name */}
             <div

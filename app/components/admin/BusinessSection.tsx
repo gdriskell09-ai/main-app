@@ -11,6 +11,10 @@ import {
   createId,
 } from "@/lib/business/storage";
 import { getBlueprint } from "@/lib/business/blueprints/index";
+import {
+  consumeWebsiteProfileDraft,
+  consumeWebsiteProfilePendingEdit,
+} from "@/lib/business/draftProfile";
 
 // ── Constants ────────────────────────────────────────────────────
 
@@ -134,6 +138,7 @@ export default function BusinessSection() {
   const [view, setView]         = useState<View>("list");
   const [profiles, setProfiles] = useState<BusinessProfile[]>([]);
   const [editing, setEditing]   = useState<BusinessProfile | null>(null);
+  const [prefillData, setPrefillData] = useState<Partial<BusinessProfile> | null>(null);
   const [genStatus,      setGenStatus]      = useState<Record<string, GenStatus>>({});
   const [genError,       setGenError]       = useState<Record<string, string>>({});
   const [deleteConfirm,  setDeleteConfirm]  = useState<Record<string, boolean>>({});
@@ -142,10 +147,28 @@ export default function BusinessSection() {
 
   useEffect(() => {
     load();
+    // Consume a pending draft (from Customer panel or Copy Kit)
+    const draft = consumeWebsiteProfileDraft();
+    if (draft) {
+      setPrefillData(draft);
+      setEditing(null);
+      setView("create");
+      return;
+    }
+    // Consume a pending edit (from preview page or Customer Edit button)
+    const pendingId = consumeWebsiteProfilePendingEdit();
+    if (pendingId) {
+      const target = getAllProfiles().find((p) => p.id === pendingId);
+      if (target) {
+        setEditing(target);
+        setView("edit");
+      }
+    }
   }, [load]);
 
   function openCreate() {
     setEditing(null);
+    setPrefillData(null);
     setView("create");
   }
 
@@ -158,6 +181,7 @@ export default function BusinessSection() {
     load();
     setView("list");
     setEditing(null);
+    setPrefillData(null);
   }
 
   function handleDelete(id: string) {
@@ -193,8 +217,9 @@ export default function BusinessSection() {
     return (
       <BusinessEditor
         existing={editing}
+        prefill={prefillData ?? undefined}
         onSaved={handleSaved}
-        onCancel={() => { setView("list"); setEditing(null); }}
+        onCancel={() => { setView("list"); setEditing(null); setPrefillData(null); }}
       />
     );
   }
@@ -605,32 +630,40 @@ export default function BusinessSection() {
 
 interface EditorProps {
   existing: BusinessProfile | null;
+  prefill?: Partial<BusinessProfile>;
   onSaved: () => void;
   onCancel: () => void;
 }
 
-function BusinessEditor({ existing, onSaved, onCancel }: EditorProps) {
+function BusinessEditor({ existing, prefill, onSaved, onCancel }: EditorProps) {
   const isNew = !existing;
-  const [form, setForm] = useState<Omit<BusinessProfile, "id" | "createdAt" | "updatedAt">>(
-    existing
-      ? {
-          businessName: existing.businessName,
-          industry: existing.industry,
-          phone: existing.phone,
-          email: existing.email,
-          serviceArea: existing.serviceArea,
-          city: existing.city,
-          brandColor: existing.brandColor,
-          logoUrl: existing.logoUrl,
-          services: existing.services,
-          businessDescription: existing.businessDescription,
-          preferredStylePack: existing.preferredStylePack,
-          desiredCustomModules: existing.desiredCustomModules,
-          websiteGoals: existing.websiteGoals,
-          quoteFormNeeds: existing.quoteFormNeeds,
-        }
-      : blankProfile()
-  );
+  const [form, setForm] = useState<Omit<BusinessProfile, "id" | "createdAt" | "updatedAt">>(() => {
+    if (existing) {
+      return {
+        customer_id: existing.customer_id,
+        businessName: existing.businessName,
+        industry: existing.industry,
+        phone: existing.phone,
+        email: existing.email,
+        serviceArea: existing.serviceArea,
+        city: existing.city,
+        brandColor: existing.brandColor,
+        logoUrl: existing.logoUrl,
+        services: existing.services,
+        businessDescription: existing.businessDescription,
+        preferredStylePack: existing.preferredStylePack,
+        desiredCustomModules: existing.desiredCustomModules,
+        websiteGoals: existing.websiteGoals,
+        quoteFormNeeds: existing.quoteFormNeeds,
+      };
+    }
+    if (prefill) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { id: _i, createdAt: _ca, updatedAt: _ua, generatedContent: _gc, ...safe } = prefill;
+      return { ...blankProfile(), ...safe };
+    }
+    return blankProfile();
+  });
 
   const [serviceInput, setServiceInput] = useState("");
   const [errors, setErrors]             = useState<string[]>([]);
