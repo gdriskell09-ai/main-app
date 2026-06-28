@@ -599,7 +599,12 @@ function CustomerDetail({
   const [submitting, setSubmitting]       = useState(false);
   const [profiles, setProfiles]           = useState<BusinessProfile[]>([]);
 
-  useEffect(() => { setProfiles(getAllProfiles()); }, []);
+  useEffect(() => {
+    (async () => {
+      const loaded = await getAllProfiles();
+      setProfiles(loaded);
+    })();
+  }, []);
 
   const today          = new Date().toISOString().split("T")[0];
   const defaultDueDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];

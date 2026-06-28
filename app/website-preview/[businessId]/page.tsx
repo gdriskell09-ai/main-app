@@ -32,8 +32,8 @@ export default function BusinessPreviewPage({ params }: PageProps) {
   const [config, setConfig]     = useState<WebsiteConfig | null>(null);
   const [linkCopied, setLinkCopied] = useState(false);
 
-  const load = useCallback(() => {
-    const p = getProfile(businessId);
+  const load = useCallback(async () => {
+    const p = await getProfile(businessId);
     if (!p) {
       setNotFound(true);
       return;

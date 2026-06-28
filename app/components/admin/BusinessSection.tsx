@@ -144,10 +144,13 @@ export default function BusinessSection() {
   const [deleteConfirm,  setDeleteConfirm]  = useState<Record<string, boolean>>({});
   const [clearConfirm,   setClearConfirm]   = useState<Record<string, boolean>>({});
 
-  const load = useCallback(() => setProfiles(getAllProfiles()), []);
+  const load = useCallback(async () => {
+    const profiles = await getAllProfiles();
+    setProfiles(profiles);
+  }, []);
 
   useEffect(() => {
-    load();
+    void load();
     // Consume a pending draft (from Customer panel or Copy Kit)
     const draft = consumeWebsiteProfileDraft();
     if (draft) {
@@ -159,11 +162,14 @@ export default function BusinessSection() {
     // Consume a pending edit (from preview page or Customer Edit button)
     const pendingId = consumeWebsiteProfilePendingEdit();
     if (pendingId) {
-      const target = getAllProfiles().find((p) => p.id === pendingId);
-      if (target) {
-        setEditing(target);
-        setView("edit");
-      }
+      (async () => {
+        const profiles = await getAllProfiles();
+        const target = profiles.find((p) => p.id === pendingId);
+        if (target) {
+          setEditing(target);
+          setView("edit");
+        }
+      })();
     }
   }, [load]);
 
@@ -185,10 +191,14 @@ export default function BusinessSection() {
     setPrefillData(null);
   }
 
-  function handleDelete(id: string) {
-    deleteProfile(id);
+  async function handleDelete(id: string) {
+    try {
+      await deleteProfile(id);
+    } catch {
+      // profile remains in list if delete fails
+    }
     setDeleteConfirm((prev) => { const n = { ...prev }; delete n[id]; return n; });
-    load();
+    void load();
   }
 
   async function handleGenerate(p: BusinessProfile) {
@@ -202,7 +212,7 @@ export default function BusinessSection() {
       });
       if (!res.ok) throw new Error(`Server returned ${res.status}`);
       const data: GeneratedWebsiteContent = await res.json();
-      const updated = saveProfile({ ...p, generatedContent: data });
+      const updated = await saveProfile({ ...p, generatedContent: data });
       setProfiles((prev) => prev.map((x) => (x.id === updated.id ? updated : x)));
       setGenStatus((prev) => ({ ...prev, [p.id]: "success" }));
     } catch (err) {
@@ -214,9 +224,13 @@ export default function BusinessSection() {
     }
   }
 
-  function handleClear(p: BusinessProfile) {
-    const updated = saveProfile({ ...p, generatedContent: undefined });
-    setProfiles((prev) => prev.map((x) => (x.id === updated.id ? updated : x)));
+  async function handleClear(p: BusinessProfile) {
+    try {
+      const updated = await saveProfile({ ...p, generatedContent: undefined });
+      setProfiles((prev) => prev.map((x) => (x.id === updated.id ? updated : x)));
+    } catch {
+      // badge remains if clear fails
+    }
     setGenStatus((prev) => ({ ...prev, [p.id]: "idle" }));
     setGenError((prev) => ({ ...prev, [p.id]: "" }));
     setClearConfirm((prev) => { const n = { ...prev }; delete n[p.id]; return n; });
@@ -792,7 +806,7 @@ function BusinessEditor({ existing, prefill, onSaved, onCancel }: EditorProps) {
     return errs.length === 0;
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     if (!validate()) return;
     const now = new Date().toISOString();
@@ -806,7 +820,12 @@ function BusinessEditor({ existing, prefill, onSaved, onCancel }: EditorProps) {
         ? { generatedContent: existing.generatedContent }
         : {}),
     };
-    saveProfile(profile);
+    try {
+      await saveProfile(profile);
+    } catch {
+      setErrors(["Failed to save profile. Please try again."]);
+      return;
+    }
     onSaved();
   }
 
