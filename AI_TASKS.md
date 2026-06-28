@@ -12,7 +12,8 @@
 
 - Phase 3.3 complete (2026-06-27) — Connected Sales + Service Flow, QA passed.
 - Phase 3.4 complete (2026-06-28) — Website Builder polish + unified creation flow. Last commit: `6540db5`.
-- Phase 3.5 not started. Do not begin Phase 3.5 work without explicit user approval.
+- Phase 3.5 complete (2026-06-28) — Generate Website Content flow confirmed present in repo via audit. No new commits required. Key files: `app/api/generate-website-content/route.ts`, `lib/business/contentGenerator.ts`, `BusinessSection.tsx` (generate button + source badge), `profileToWebsiteConfig.ts` (consumes generatedContent).
+- Phase 3.6 not started. Do not begin Phase 3.6 work without explicit user approval.
 
 ## Current Approved Work
 

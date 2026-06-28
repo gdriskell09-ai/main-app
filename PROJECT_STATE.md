@@ -15,7 +15,7 @@
 
 **Important separation rule:** `scrub-club-app` is a separate proof-model pressure washing app at `/Users/grantdriskell/Documents/GitHub/scrub-club-app`. Do not copy assumptions, file paths, schema, or app architecture between repos without explicit approval.
 
-**Current phase:** Phase 3.4d.2 complete (2026-06-28). Unified website profile creation flow shipped. Phase 3.5 not yet started.
+**Current phase:** Phase 3.5 complete (2026-06-28). Generate Website Content flow confirmed present in repo. Phase 3.6 not yet started.
 
 **Current product rule:** the base website builder must work with zero AI keys. Blueprint/fallback generation remains the default. AI and future tool modules are optional roadmap layers unless explicitly approved.
 
@@ -190,9 +190,18 @@ Bug fixed during QA: `premium-minimal` style pack missing from website-preview s
 
 ## 5. Current Stop Point
 
-**Phase 3.4d.2 complete (2026-06-28). Phase 3.5 not yet started.**
+**Phase 3.5 complete (2026-06-28). Phase 3.6 not yet started.**
 
-Phase 3.4d.2 shipped as commit `6540db5`. Build passes: 22/22 routes, TypeScript clean.
+Phase 3.4d.2 shipped as commit `6540db5`. Phase 3.5 confirmed complete via audit on 2026-06-28 — no new commits required; all components were already present in the repo.
+
+### Phase 3.5 — Generate Website Content (complete, confirmed via audit 2026-06-28)
+
+All three layers of the Generate Website Content flow are implemented and passing build:
+
+- **API route:** `app/api/generate-website-content/route.ts` — accepts POST with `BusinessProfile`, tries Groq if `GROQ_API_KEY` is set, falls back to deterministic blueprint content, validates shape before returning.
+- **Fallback generator:** `lib/business/contentGenerator.ts` — `generateFallbackContent(profile)` — deterministic, blueprint-driven, no AI dependency, produces complete `GeneratedWebsiteContent`.
+- **Admin UI:** `app/components/admin/BusinessSection.tsx` — per-profile "Generate Website Content" / "Regenerate Content" button, loading/success/error state machine, saves returned `generatedContent` to localStorage via `saveProfile`, shows "Blueprint" or "AI Content" source badge.
+- **Preview path:** `lib/business/profileToWebsiteConfig.ts` already reads `profile.generatedContent` and uses its fields to override blueprint defaults for hero, services, whyChooseUs, stats, FAQs, reviews, and final CTA. No preview changes needed.
 
 Known open items (not blocking):
 - Copy Kit → Website Profile: `GeneratedCopy` and `GeneratedWebsiteContent` schemas remain separate by design. The bridge is field-extraction only (name, industry, city, service titles, tagline). Full content migration not planned.
@@ -829,4 +838,4 @@ Every step requires explicit owner approval before anything is published, listed
 
 ---
 
-*Last updated: Phase 3.4d.2 complete (2026-06-28). Unified website profile creation flow. Commit `6540db5`. Phase 3.5 not started.*
+*Last updated: Phase 3.5 complete (2026-06-28). Generate Website Content flow confirmed present in repo via audit. Last app commit `6540db5`. Phase 3.6 not started.*

@@ -1,5 +1,18 @@
 # Decision Log
 
+## 2026-06-28: Phase 3.5 — Generate Website Content (confirmed complete via audit)
+
+Phase 3.5 was confirmed complete via a read-only audit on 2026-06-28. No new code was written. All three layers were already present in the repo:
+
+- `app/api/generate-website-content/route.ts` — POST handler, Groq generation, shape validation, fallback-on-error.
+- `lib/business/contentGenerator.ts` — `generateFallbackContent()` — deterministic blueprint-driven fallback, no AI dependency.
+- `app/components/admin/BusinessSection.tsx` — per-profile generate button with idle/generating/success/error state machine, saves via `saveProfile`, source badge ("Blueprint" / "AI Content").
+- `lib/business/profileToWebsiteConfig.ts` — already reads `profile.generatedContent` and applies it to all rendered sections.
+
+Key decision recorded: **audit before duplicating**. Two Slice 1 attempts produced files (`fallbackGenerator.ts`, planned API route) that would have been exact duplicates of existing code. The audit approach discovered this before any redundant code was committed.
+
+Phase 3.6 is not started and requires explicit approval.
+
 ## 2026-06-28: Phase 3.4d.2 — Unified Website Profile Creation Flow
 
 Three previously disconnected entry points (Customer panel, Copy Kit, manual "+ New Profile") now share one editor via a sessionStorage draft bus (`lib/business/draftProfile.ts`). No profile is saved until the user explicitly clicks Save in the editor.
