@@ -1,5 +1,17 @@
 # Decision Log
 
+## 2026-06-28: Phase 3.6 Slice 2A — Generated Content Staleness Indicator
+
+Commit `a5d6673`. File: `app/components/admin/BusinessSection.tsx` only.
+
+Added a `isStale` boolean in the profile card map callback. A profile is stale when `p.updatedAt` and `p.generatedContent.generatedAt` both exist and `p.updatedAt > p.generatedContent.generatedAt`. When true, a subtle amber "Content may be outdated" badge renders next to the existing "Generated [date]" timestamp.
+
+Key decisions:
+- **Date-comparison only** — no new fields added to `BusinessProfile` or `GeneratedWebsiteContent`. Both timestamps were already present.
+- **Display-only** — badge informs the admin; it does not block preview, trigger regeneration, or reset content.
+- **Content preview and inline editing remain parked** — showing generated copy on the card or allowing inline edits is a separate slice requiring explicit approval.
+- No storage, API, schema, RLS, or preview route changes. Build: 22/22 routes, 0 TypeScript errors.
+
 ## 2026-06-28: Preview/RLS Strategy — Future Direction Established (No Code Written)
 
 Read-only audit of the `/website-preview/[businessId]` page and Supabase client setup. No implementation approved.

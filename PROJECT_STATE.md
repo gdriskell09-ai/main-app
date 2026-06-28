@@ -15,7 +15,7 @@
 
 **Important separation rule:** `scrub-club-app` is a separate proof-model pressure washing app at `/Users/grantdriskell/Documents/GitHub/scrub-club-app`. Do not copy assumptions, file paths, schema, or app architecture between repos without explicit approval.
 
-**Current phase:** Phase 3.6 Slice 1 complete (2026-06-28). Generated content timestamp and reset-to-blueprint controls shipped. Phase 3.6 Slice 2 not yet started.
+**Current phase:** Phase 3.6 complete (2026-06-28). Generated content timestamp, reset-to-blueprint controls, and staleness indicator shipped. Content preview/inline editing remain parked.
 
 **Current product rule:** the base website builder must work with zero AI keys. Blueprint/fallback generation remains the default. AI and future tool modules are optional roadmap layers unless explicitly approved.
 
@@ -190,7 +190,7 @@ Bug fixed during QA: `premium-minimal` style pack missing from website-preview s
 
 ## 5. Current Stop Point
 
-**Phase 3.6 Slice 1 complete (2026-06-28). Phase 3.6 Slice 2 not yet started.**
+**Phase 3.6 complete (2026-06-28). Staleness indicator shipped.**
 
 Phase 3.4d.2 shipped as commit `6540db5`. Phase 3.5 confirmed complete via audit on 2026-06-28 — no new commits required; all components were already present in the repo.
 
@@ -201,9 +201,16 @@ Commit `27f2091`. Only file changed: `app/components/admin/BusinessSection.tsx`.
 - **Timestamp:** profile cards now show "Generated [date]" when `generatedContent` exists, using `generatedContent.generatedAt`.
 - **Reset to Blueprint:** a "Reset to blueprint" button appears on cards with generated content. First click shows a confirm row ("Confirm clear" + "Cancel") matching the existing delete confirm pattern. Confirming calls `saveProfile({ ...p, generatedContent: undefined })` through the existing storage abstraction and resets the generate button to idle.
 
-**Not yet implemented (parked, require separate approval):**
-- Staleness indicator (flag when `profile.updatedAt` > `generatedContent.generatedAt`)
+**Parked (require separate approval):**
 - Content preview/read-only headline display on card
+- Inline editing of generated content on card
+
+### Phase 3.6 Slice 2A — Generated Content Staleness Indicator (complete, 2026-06-28)
+
+Commit `a5d6673`. Only file changed: `app/components/admin/BusinessSection.tsx`.
+
+- **Staleness indicator:** profile cards now show a subtle amber "Content may be outdated" badge next to the "Generated [date]" timestamp when `profile.updatedAt` is newer than `generatedContent.generatedAt`.
+- No storage, API, schema, RLS, or preview route changes. Build: 22/22 routes, 0 TypeScript errors.
 
 ### Phase 3.5 — Generate Website Content (complete, confirmed via audit 2026-06-28)
 
@@ -867,4 +874,4 @@ Every step requires explicit owner approval before anything is published, listed
 
 ---
 
-*Last updated: Phase 3.6 Slice 1 complete (2026-06-28). Generated content timestamp and reset-to-blueprint controls. Commit `27f2091`. Phase 3.6 Slice 2 not started.*
+*Last updated: Phase 3.6 complete (2026-06-28). Staleness indicator shipped. Commit `a5d6673`. Content preview/inline editing parked. Supabase migration parked.*
