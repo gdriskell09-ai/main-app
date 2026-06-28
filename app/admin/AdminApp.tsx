@@ -7,6 +7,7 @@ import { useRouter } from "next/navigation";
 import BusinessSection from "@/app/components/admin/BusinessSection";
 import type { BusinessProfile } from "@/lib/business/types";
 import { getAllProfiles, saveProfile, createId } from "@/lib/business/storage";
+import { getBlueprint } from "@/lib/business/blueprints/index";
 
 const LeadMapComponent   = dynamic(() => import("./LeadMap"),    { ssr: false });
 const CanvassMapComponent = dynamic(() => import("./CanvassMap"), { ssr: false });
@@ -722,13 +723,13 @@ function CustomerDetail({
       industry: bizType || "",
       phone: customer.phone || "",
       email: customer.email || "",
-      city: customer.address || "",
+      city: "",
       serviceArea: "",
       brandColor: "#0ea5e9",
       logoUrl: "",
       services: [],
       businessDescription: linkedLead?.message || "",
-      preferredStylePack: "bold-contractor",
+      preferredStylePack: getBlueprint(bizType || "").recommendedStylePacks[0],
       desiredCustomModules: [],
       websiteGoals: linkedLead?.need || "",
       quoteFormNeeds: "",

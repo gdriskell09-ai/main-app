@@ -228,7 +228,7 @@ export default function BusinessSection() {
               margin: 0,
             }}
           >
-            Business Profiles
+            Website Profiles
           </h2>
           <p
             style={{
@@ -253,7 +253,7 @@ export default function BusinessSection() {
             cursor: "pointer",
           }}
         >
-          + New Business
+          + New Profile
         </button>
       </div>
 
@@ -422,6 +422,21 @@ export default function BusinessSection() {
                       }}
                     >
                       {p.generatedContent.source === "groq" ? "AI Content" : "Blueprint"}
+                    </span>
+                  )}
+                  {p.customer_id && (
+                    <span
+                      style={{
+                        fontSize: "11px",
+                        fontWeight: 600,
+                        color: "#7c3aed",
+                        background: "#f5f3ff",
+                        borderRadius: "6px",
+                        padding: "3px 9px",
+                        border: "1px solid #ddd6fe",
+                      }}
+                    >
+                      Client ↗
                     </span>
                   )}
                 </div>
