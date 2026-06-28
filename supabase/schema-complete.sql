@@ -265,6 +265,37 @@ create policy "canvass_pins_owner" on public.canvass_pins
   for all to authenticated using (public.is_admin_or_owner()) with check (public.is_admin_or_owner());
 
 
+-- ── business_profiles ───────────────────────────────────────
+
+create table if not exists public.business_profiles (
+  id                     text primary key,
+  owner_id               text,
+  customer_id            text,
+  business_name          text not null default '',
+  industry               text not null default '',
+  phone                  text not null default '',
+  email                  text not null default '',
+  service_area           text not null default '',
+  city                   text not null default '',
+  brand_color            text not null default '#0ea5e9',
+  logo_url               text not null default '',
+  services               text[] not null default '{}',
+  business_description   text not null default '',
+  preferred_style_pack   text not null default 'bold-contractor',
+  desired_custom_modules text[] not null default '{}',
+  website_goals          text not null default '',
+  quote_form_needs       text not null default '',
+  generated_content      jsonb,
+  created_at             timestamptz not null default now(),
+  updated_at             timestamptz not null default now()
+);
+
+drop trigger if exists business_profiles_updated_at on public.business_profiles;
+create trigger business_profiles_updated_at
+  before update on public.business_profiles
+  for each row execute function public.set_updated_at();
+
+
 -- ── Grant yourself owner access ──────────────────────────────
 -- After running this script, paste your auth UID below and run it once:
 --
