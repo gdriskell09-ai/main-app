@@ -16,6 +16,7 @@ import {
   peekWebsiteProfileDraft,
   consumeWebsiteProfileDraft,
   consumeWebsiteProfilePendingEdit,
+  createWebsiteProfileDraft,
 } from "@/lib/business/draftProfile";
 
 // ── Constants ────────────────────────────────────────────────────
@@ -255,6 +256,7 @@ export default function BusinessSection({ onNavigate }: { onNavigate?: (section:
         prefill={prefillData ?? undefined}
         onSaved={handleSaved}
         onCancel={() => { consumeWebsiteProfileDraft(); setView("list"); setEditing(null); setPrefillData(null); }}
+        onFormChange={prefillData !== null ? (f) => createWebsiteProfileDraft(f) : undefined}
       />
     );
   }
@@ -749,9 +751,10 @@ interface EditorProps {
   prefill?: Partial<BusinessProfile>;
   onSaved: () => void;
   onCancel: () => void;
+  onFormChange?: (form: Partial<BusinessProfile>) => void;
 }
 
-function BusinessEditor({ existing, prefill, onSaved, onCancel }: EditorProps) {
+function BusinessEditor({ existing, prefill, onSaved, onCancel, onFormChange }: EditorProps) {
   const isNew = !existing;
   const [form, setForm] = useState<Omit<BusinessProfile, "id" | "createdAt" | "updatedAt">>(() => {
     if (existing) {
@@ -783,6 +786,11 @@ function BusinessEditor({ existing, prefill, onSaved, onCancel }: EditorProps) {
 
   const [serviceInput, setServiceInput] = useState("");
   const [errors, setErrors]             = useState<string[]>([]);
+
+  useEffect(() => {
+    onFormChange?.(form);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form]);
 
   function set<K extends keyof typeof form>(key: K, value: (typeof form)[K]) {
     setForm((prev) => ({ ...prev, [key]: value }));
