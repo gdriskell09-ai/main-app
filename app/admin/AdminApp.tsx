@@ -1127,7 +1127,7 @@ function CustomersSection({
   onSelectCustomer: (id: string | null) => void;
 }) {
   const [search, setSearch] = useState("");
-  const selected = customers.find((c) => c.id === selectedCustomerId) ?? null;
+  const selected = customers.find((c) => String(c.id) === String(selectedCustomerId ?? "")) ?? null;
   const [showAdd, setShowAdd] = useState(false);
   const [addName, setAddName] = useState("");
   const [addEmail, setAddEmail] = useState("");
