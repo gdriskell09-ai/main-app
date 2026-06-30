@@ -190,7 +190,7 @@ Bug fixed during QA: `premium-minimal` style pack missing from website-preview s
 
 ## 5. Current Stop Point
 
-**Phase 3.7 fully complete (2026-06-30). Business profile storage migrated to Supabase (Slices B+C+D); one-time localStorage import shipped (Slice E). Live Supabase table confirmed present and runtime QA passed. UX cleanup commits `68b0446` and `e0df637` pushed.**
+**Phase 3.7 fully complete (2026-06-30). Business profile storage migrated to Supabase (Slices B+C+D); one-time localStorage import shipped (Slice E). Live Supabase table confirmed present and runtime QA passed. UX cleanup commits `68b0446`, `e0df637`, `a9c143e`, and `54b47bb` applied.**
 
 Phase 3.4d.2 shipped as commit `6540db5`. Phase 3.5 confirmed complete via audit on 2026-06-28 — no new commits required; all components were already present in the repo.
 
@@ -257,7 +257,7 @@ The live Supabase project was missing the `business_profiles` table, causing 404
 
 ### Phase 3.7 — UX Cleanup Fixes (2026-06-30)
 
-Commits `68b0446` and `e0df637`. Build: 22/22 routes, 0 TypeScript errors before each commit. No schema, RLS, service role, share tokens, preview refactor, or new dependencies.
+Commits `68b0446`, `e0df637`, `a9c143e`, and `54b47bb`. Build: 22/22 routes, 0 TypeScript errors before each commit. No schema, RLS, service role, share tokens, preview refactor, or new dependencies.
 
 **`68b0446` — Admin section persistence + generated content timestamp:**
 - `app/admin/AdminApp.tsx`: `useState` initializer now reads `sessionStorage["admin_active_section"]` as a fallback when no nav target is set; a new `useEffect` writes the current section on every change. Hard refresh no longer resets admin to Overview.
@@ -267,6 +267,19 @@ Commits `68b0446` and `e0df637`. Build: 22/22 routes, 0 TypeScript errors before
 - `lib/business/draftProfile.ts`: added `peek<T>()` helper (reads without removing) and `peekWebsiteProfileDraft()` export. TTL behavior preserved; expired entries cleaned up on peek.
 - `app/components/admin/BusinessSection.tsx`: mount `useEffect` now uses `peekWebsiteProfileDraft()` instead of `consumeWebsiteProfileDraft()`. Draft stays in sessionStorage across section switches; consumed only at explicit save or cancel. After saving a new profile from the customer flow (`customer_id` set, `editing` null), auto-navigates to Customers section.
 - `app/admin/AdminApp.tsx`: passes `onNavigate={(s) => setSection(s as Section)}` prop to `<BusinessSection />`.
+
+**`a9c143e` — Typed website profile draft field persistence:**
+- `app/components/admin/BusinessSection.tsx` only. Root cause: `BusinessEditor` initialized `form` state once from the sessionStorage draft; typed changes accumulated in React state only and were lost on unmount. Re-mount peeked the original unedited draft, resetting all fields.
+- Fix: optional `onFormChange` prop added to `BusinessEditor`. A `useEffect` on `form` calls `onFormChange?.(form)` on every state change. `BusinessSection` passes `(f) => createWebsiteProfileDraft(f)` when `prefillData !== null` (customer draft flow only). Manual "+ New Profile" and edit existing profile flows are unaffected.
+- Build: 22/22 routes, 0 TypeScript errors. No schema, RLS, service role, share tokens, preview refactor, or new dependencies.
+
+**`54b47bb` — Customer detail page shows linked Website Profile correctly:**
+- `app/admin/AdminApp.tsx` only. Supabase read-only checks confirmed `business_profiles.customer_id` exists and is correctly linked to `customers.id` at the database level — this was not a missing-column or bad-data issue.
+- Root cause: `CustomerDetail` compared `p.customer_id === customer.id`. `business_profiles.customer_id` is a `text` column (returned as a string, e.g. `"12"`); `customers.id` is `bigint` (returned as a number, e.g. `12`). Strict equality always failed, so `linkedProfile` was never found even when the link existed.
+- Fix: normalized the lookup to `p.customer_id === String(customer.id)`.
+- Secondary fix: added a `profilesLoading` state (`true` initially, `false` after `getAllProfiles()` resolves) so the Website Profile section shows a "Loading…" placeholder instead of briefly and incorrectly showing "No website profile yet." before profiles finish loading.
+- Build: 22/22 routes, 0 TypeScript errors. No schema, RLS, service role, share tokens, preview refactor, or new dependencies.
+- Manual browser QA not yet confirmed by Grant.
 
 ### Phase 3.5 — Generate Website Content (complete, confirmed via audit 2026-06-28)
 
@@ -921,4 +934,4 @@ Every step requires explicit owner approval before anything is published, listed
 
 ---
 
-*Last updated: Phase 3.7 UX cleanup complete (2026-06-30). Latest commits: `68b0446` (admin section persistence + timestamp) and `e0df637` (customer draft persistence + return navigation). RLS/owner_id enforcement remains a separate future security slice.*
+*Last updated: Phase 3.7 UX cleanup complete (2026-06-30). Latest commits: `68b0446` (admin section persistence + timestamp), `e0df637` (customer draft persistence + return navigation), `a9c143e` (typed draft field persistence), `54b47bb` (customer-side linked Website Profile display fix). RLS/owner_id enforcement remains a separate future security slice.*

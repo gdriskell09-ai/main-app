@@ -1,8 +1,8 @@
 # Decision Log
 
-## 2026-06-30: Phase 3.7 UX Cleanup — Section Persistence, Timestamp, Draft Persistence, Customer Return
+## 2026-06-30: Phase 3.7 UX Cleanup — Section Persistence, Timestamp, Draft Persistence, Customer Return, Typed Draft Field Persistence, Customer-Side Profile Display Fix
 
-Commits `68b0446` and `e0df637`. Build: 22/22 routes, 0 TypeScript errors before each commit. No schema, RLS, service role, share tokens, preview refactor, or new dependencies in either commit.
+Commits `68b0446`, `e0df637`, `a9c143e`, and `54b47bb`. Build: 22/22 routes, 0 TypeScript errors before each commit. No schema, RLS, service role, share tokens, preview refactor, or new dependencies in any commit.
 
 ### `68b0446` — Admin section persistence + generated content timestamp
 
@@ -22,6 +22,33 @@ Key decisions:
 - **TTL preserved** — `peek` still honors the 10-minute TTL and cleans up expired entries on read.
 - **Customer return navigation** — after saving a NEW profile from a customer-started flow (`!editing && prefillData.customer_id`), `BusinessSection` calls `onNavigate?.("customers")`. `AdminApp` passes `onNavigate={(s) => setSection(s as Section)}` as a new optional prop.
 - `cast (s as Section)` used at the call site to bridge `string` prop type in `BusinessSection` and the typed `Dispatch<SetStateAction<Section>>` in `AdminApp`; safe because the only value passed is `"customers"`.
+
+### `a9c143e` — Typed website profile draft field persistence
+
+File: `app/components/admin/BusinessSection.tsx`.
+
+Root cause: `BusinessEditor` initialized `form` state from the sessionStorage draft once via `useState(() => ...)`. As the user typed, `form` updated in React state only — the sessionStorage draft was never written back. On section navigation or hard refresh, `BusinessSection` re-mounted and re-peeked the original unedited draft, resetting all typed changes.
+
+Key decisions:
+- **Write-back on every form change** — added optional `onFormChange?: (form: Partial<BusinessProfile>) => void` prop to `BusinessEditor`. A `useEffect` on `form` calls `onFormChange?.(form)` on every state change.
+- **Scoped to customer draft flow only** — `BusinessSection` passes `onFormChange={(f) => createWebsiteProfileDraft(f)}` only when `prefillData !== null`. Manual "+ New Profile" and edit existing profile flows receive `undefined` and are unaffected.
+- **No new storage primitives** — reuses existing `createWebsiteProfileDraft()`. Its `preferredStylePack` guard is a no-op when the form is fully populated (style pack is always set at this point).
+- Build: 22/22 routes, 0 TypeScript errors. No schema, RLS, service role, share tokens, preview refactor, or new dependencies.
+
+### `54b47bb` — Customer-side Website Profile card/link display fix
+
+File: `app/admin/AdminApp.tsx`.
+
+Reported as: Customer → Create Website Profile → Save did not show the linked Website Profile card on the Customer detail page. Live read-only Supabase checks (run manually by Grant in the SQL Editor) confirmed `business_profiles.customer_id` exists and is correctly populated and linked to the corresponding `customers.id` row — this ruled out a missing-column or bad-data cause and scoped the fix to the UI layer only.
+
+Root cause: `CustomerDetail`'s `linkedProfile` lookup used `profiles.find((p) => p.customer_id === customer.id)`. `business_profiles.customer_id` is a Postgres `text` column, always returned as a JS string (e.g. `"12"`) by the Supabase client. `customers.id` is `bigint`, always returned as a JS number (e.g. `12`). Strict `===` between a string and a number is always `false`, so the link was never found even when correctly set in the database. (Other comparisons in the same component — jobs/quotes/invoices `customer_id` — worked correctly because those columns are also numeric/bigint-derived, the same runtime type as `customer.id`.)
+
+Key decisions:
+- **Normalize at the comparison, not the schema** — fixed by comparing `p.customer_id === String(customer.id)` rather than changing the `business_profiles.customer_id` column type. No schema change needed or made.
+- **Added a `profilesLoading` state** — `profiles` initializes to `[]`, so before the audit fix the page would briefly and incorrectly render "No website profile yet." while `getAllProfiles()` was still in flight. Added `profilesLoading` (`true` initially, `false` once the existing `useEffect`'s `getAllProfiles()` call resolves) and a three-way render branch: linked profile card → "Loading…" placeholder → "No website profile yet." empty state. The "+ Create Website Profile" button visibility is unchanged (still gated on `!linkedProfile` only, not on loading state).
+- **Diagnosis discipline** — initial hypothesis (schema file lacked an `ALTER TABLE ADD COLUMN IF NOT EXISTS` guard for `business_profiles`, unlike every other table) was disproved by live read-only Supabase checks before any schema SQL was written or run. Audit pivoted to a pure UI-layer investigation per explicit instruction once the DB-level link was confirmed correct.
+- Build: 22/22 routes, 0 TypeScript errors. No schema, RLS, service role, share tokens, preview refactor, or new dependencies.
+- Manual browser QA not yet confirmed by Grant — do not treat as fully verified until confirmed.
 
 ## 2026-06-30: Phase 3.7 — Runtime QA + Schema Fix
 
