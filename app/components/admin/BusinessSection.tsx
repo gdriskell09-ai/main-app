@@ -137,7 +137,7 @@ function Field({
 type View = "list" | "create" | "edit";
 type GenStatus = "idle" | "generating" | "success" | "error";
 
-export default function BusinessSection({ onNavigate }: { onNavigate?: (section: string) => void } = {}) {
+export default function BusinessSection({ onNavigate, onNavigateToCustomer }: { onNavigate?: (section: string) => void; onNavigateToCustomer?: (customerId: string) => void } = {}) {
   const [view, setView]         = useState<View>("list");
   const [profiles, setProfiles] = useState<BusinessProfile[]>([]);
   const [editing, setEditing]   = useState<BusinessProfile | null>(null);
@@ -194,13 +194,20 @@ export default function BusinessSection({ onNavigate }: { onNavigate?: (section:
 
   function handleSaved() {
     consumeWebsiteProfileDraft();
-    const shouldReturnToCustomers = !editing && !!prefillData?.customer_id;
+    const returnCustomerId =
+      (!editing && prefillData?.customer_id)
+        ? prefillData.customer_id
+        : (editing?.customer_id ?? null);
     load();
     setView("list");
     setEditing(null);
     setPrefillData(null);
-    if (shouldReturnToCustomers) {
-      onNavigate?.("customers");
+    if (returnCustomerId) {
+      if (onNavigateToCustomer) {
+        onNavigateToCustomer(returnCustomerId);
+      } else {
+        onNavigate?.("customers");
+      }
     }
   }
 
@@ -492,7 +499,8 @@ export default function BusinessSection({ onNavigate }: { onNavigate?: (section:
                     </span>
                   )}
                   {p.customer_id && (
-                    <span
+                    <button
+                      onClick={() => onNavigateToCustomer?.(p.customer_id!)}
                       style={{
                         fontSize: "11px",
                         fontWeight: 600,
@@ -501,10 +509,11 @@ export default function BusinessSection({ onNavigate }: { onNavigate?: (section:
                         borderRadius: "6px",
                         padding: "3px 9px",
                         border: "1px solid #ddd6fe",
+                        cursor: "pointer",
                       }}
                     >
                       Client ↗
-                    </span>
+                    </button>
                   )}
                 </div>
 

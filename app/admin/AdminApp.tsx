@@ -1907,6 +1907,19 @@ export default function AdminApp() {
   useEffect(() => {
     sessionStorage.setItem("admin_active_section", section);
   }, [section]);
+
+  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(
+    () => sessionStorage.getItem("admin_selected_customer") ?? null
+  );
+
+  useEffect(() => {
+    if (selectedCustomerId) {
+      sessionStorage.setItem("admin_selected_customer", selectedCustomerId);
+    } else {
+      sessionStorage.removeItem("admin_selected_customer");
+    }
+  }, [selectedCustomerId]);
+
   const [leads, setLeads] = useState<Lead[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -1916,7 +1929,6 @@ export default function AdminApp() {
   const [customersLoading, setCustomersLoading] = useState(true);
   const [userEmail, setUserEmail] = useState("");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [selectedCustomerId, setSelectedCustomerId] = useState<string | null>(null);
   const [selectedLeadId, setSelectedLeadId] = useState<number | null>(null);
 
   const loadLeads = useCallback(async () => {
@@ -2216,7 +2228,12 @@ export default function AdminApp() {
           {section === "canvass"      && <CanvassSection />}
           {section === "contracts"    && <ContractVaultSection />}
           {section === "ai_generator" && <AiGeneratorSection onNavigate={setSection} />}
-          {section === "websites"     && <BusinessSection onNavigate={(s) => setSection(s as Section)} />}
+          {section === "websites"     && (
+            <BusinessSection
+              onNavigate={(s) => setSection(s as Section)}
+              onNavigateToCustomer={(id) => { setSelectedCustomerId(id); setSection("customers"); }}
+            />
+          )}
           {section === "settings"     && <SettingsSection email={userEmail} />}
         </div>
       </div>
