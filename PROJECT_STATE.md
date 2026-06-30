@@ -190,7 +190,7 @@ Bug fixed during QA: `premium-minimal` style pack missing from website-preview s
 
 ## 5. Current Stop Point
 
-**Phase 3.7 core runtime-verified (2026-06-30). Business profile storage migrated to Supabase (Slices B+C+D); one-time localStorage import shipped (Slice E). Live Supabase table confirmed present and runtime QA passed.**
+**Phase 3.7 fully complete (2026-06-30). Business profile storage migrated to Supabase (Slices B+C+D); one-time localStorage import shipped (Slice E). Live Supabase table confirmed present and runtime QA passed. UX cleanup commits `68b0446` and `e0df637` pushed.**
 
 Phase 3.4d.2 shipped as commit `6540db5`. Phase 3.5 confirmed complete via audit on 2026-06-28 — no new commits required; all components were already present in the repo.
 
@@ -251,9 +251,22 @@ The live Supabase project was missing the `business_profiles` table, causing 404
 
 **Known follow-ups (not blocking — require separate approval before acting):**
 - Legacy localStorage import edge case: only relevant if an old Scrub Club localStorage profile needs importing; no action until confirmed needed.
-- Admin hard refresh resets selected section back to Overview (UX regression, not a data bug).
-- Generated timestamp shows date only, not exact time.
 - `business_profiles` has no RLS/owner_id enforcement — not public-launch-ready. RLS/owner_id enforcement must be a separate approved security slice.
+
+*Fixed separately (see UX Cleanup section below): admin section persistence on hard refresh; generated content timestamp date+time; customer draft persistence; customer return navigation.*
+
+### Phase 3.7 — UX Cleanup Fixes (2026-06-30)
+
+Commits `68b0446` and `e0df637`. Build: 22/22 routes, 0 TypeScript errors before each commit. No schema, RLS, service role, share tokens, preview refactor, or new dependencies.
+
+**`68b0446` — Admin section persistence + generated content timestamp:**
+- `app/admin/AdminApp.tsx`: `useState` initializer now reads `sessionStorage["admin_active_section"]` as a fallback when no nav target is set; a new `useEffect` writes the current section on every change. Hard refresh no longer resets admin to Overview.
+- `app/components/admin/BusinessSection.tsx`: generated content timestamp changed from `toLocaleDateString()` to `toLocaleString(...)` with month/day/year/hour/minute options. Now shows date + time (e.g. "Jun 28, 2026, 3:47 PM").
+
+**`e0df637` — Customer → Website Profile draft persistence + return navigation:**
+- `lib/business/draftProfile.ts`: added `peek<T>()` helper (reads without removing) and `peekWebsiteProfileDraft()` export. TTL behavior preserved; expired entries cleaned up on peek.
+- `app/components/admin/BusinessSection.tsx`: mount `useEffect` now uses `peekWebsiteProfileDraft()` instead of `consumeWebsiteProfileDraft()`. Draft stays in sessionStorage across section switches; consumed only at explicit save or cancel. After saving a new profile from the customer flow (`customer_id` set, `editing` null), auto-navigates to Customers section.
+- `app/admin/AdminApp.tsx`: passes `onNavigate={(s) => setSection(s as Section)}` prop to `<BusinessSection />`.
 
 ### Phase 3.5 — Generate Website Content (complete, confirmed via audit 2026-06-28)
 
@@ -908,4 +921,4 @@ Every step requires explicit owner approval before anything is published, listed
 
 ---
 
-*Last updated: Phase 3.7 runtime QA verified (2026-06-30). Missing `business_profiles` table added to live Supabase project (commit `767d30f`, SQL Editor). Full runtime QA passed. RLS/owner_id enforcement is a separate future security slice.*
+*Last updated: Phase 3.7 UX cleanup complete (2026-06-30). Latest commits: `68b0446` (admin section persistence + timestamp) and `e0df637` (customer draft persistence + return navigation). RLS/owner_id enforcement remains a separate future security slice.*

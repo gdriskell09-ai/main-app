@@ -1,5 +1,28 @@
 # Decision Log
 
+## 2026-06-30: Phase 3.7 UX Cleanup — Section Persistence, Timestamp, Draft Persistence, Customer Return
+
+Commits `68b0446` and `e0df637`. Build: 22/22 routes, 0 TypeScript errors before each commit. No schema, RLS, service role, share tokens, preview refactor, or new dependencies in either commit.
+
+### `68b0446` — Admin section persistence + generated content timestamp
+
+Files: `app/admin/AdminApp.tsx`, `app/components/admin/BusinessSection.tsx`.
+
+- **Admin section persistence:** `useState` initializer now falls back to `sessionStorage["admin_active_section"]` when `consumeNavTarget()` returns null. A `useEffect` writes the current section on every change. Hard refresh no longer resets admin to Overview. `consumeNavTarget()` (used by the profile-creation flow) retains full priority.
+- **Generated content timestamp:** `toLocaleDateString()` → `toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })`. Timestamp on profile cards now shows date + time.
+
+### `e0df637` — Customer → Website Profile draft persistence + return navigation
+
+Files: `lib/business/draftProfile.ts`, `app/components/admin/BusinessSection.tsx`, `app/admin/AdminApp.tsx`.
+
+Root cause: `consumeWebsiteProfileDraft()` read and immediately deleted the draft from sessionStorage on `BusinessSection` mount. Navigating away caused an unmount, React state was lost, and on return the draft was gone.
+
+Key decisions:
+- **Peek without consuming on mount** — added `peek<T>()` helper and `peekWebsiteProfileDraft()` export to `draftProfile.ts`. Mount `useEffect` peeks instead of consuming; draft survives section switches. Draft is consumed (deleted) only at explicit save or cancel.
+- **TTL preserved** — `peek` still honors the 10-minute TTL and cleans up expired entries on read.
+- **Customer return navigation** — after saving a NEW profile from a customer-started flow (`!editing && prefillData.customer_id`), `BusinessSection` calls `onNavigate?.("customers")`. `AdminApp` passes `onNavigate={(s) => setSection(s as Section)}` as a new optional prop.
+- `cast (s as Section)` used at the call site to bridge `string` prop type in `BusinessSection` and the typed `Dispatch<SetStateAction<Section>>` in `AdminApp`; safe because the only value passed is `"customers"`.
+
 ## 2026-06-30: Phase 3.7 — Runtime QA + Schema Fix
 
 Commit `767d30f`. File: `supabase/schema-complete.sql`.

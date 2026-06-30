@@ -19,6 +19,9 @@
 - Phase 3.7 Slices B+C+D complete (2026-06-28) — Business profile storage migrated from localStorage to Supabase. Commit `8bb8abb`. Files: `lib/business/storage.ts`, `BusinessSection.tsx`, `AdminApp.tsx`, `[businessId]/page.tsx`.
 - Phase 3.7 Slice E complete (2026-06-28) — One-time localStorage → Supabase profile import. Commit `30418b8`. Files: `lib/business/storage.ts`, `BusinessSection.tsx`. `migrateLocalStorageProfiles()` runs on first admin Websites load; sets `bp_migrated` flag after all upserts succeed.
 - Phase 3.7 runtime QA passed (2026-06-30) — Live Supabase project had a missing `business_profiles` table (causing 404s). Schema definition added to `supabase/schema-complete.sql` (commit `767d30f`) and applied via SQL Editor. No app code changed. All runtime QA scenarios passed (see PROJECT_STATE.md §5 for full QA checklist).
+- Phase 3.7 UX cleanup complete (2026-06-30) — Two fix commits pushed, build passed (22/22 routes, 0 TypeScript errors) before each:
+  - `68b0446`: admin section persists across hard refresh (sessionStorage); generated content timestamp shows date + time. Files: `AdminApp.tsx`, `BusinessSection.tsx`.
+  - `e0df637`: customer-started Website Profile drafts persist across section navigation (peek-not-consume); saving returns to Customers. Files: `lib/business/draftProfile.ts`, `BusinessSection.tsx`, `AdminApp.tsx`.
 
 ## Current Approved Work
 
@@ -76,9 +79,9 @@ Commit `30418b8`. `migrateLocalStorageProfiles()` added to `lib/business/storage
 
 **Known follow-ups (not blocking — require separate approval before acting):**
 - Legacy localStorage import edge case: only relevant if old Scrub Club localStorage profile needs importing.
-- Admin hard refresh resets selected section back to Overview (UX regression, not a data bug).
-- Generated timestamp shows date only, not exact time.
 - `business_profiles` has no RLS/owner_id enforcement — not public-launch-ready.
+
+*Fixed (commits `68b0446`, `e0df637`): admin section persistence; generated timestamp date+time; customer draft persistence; customer return navigation after save.*
 
 ## Forbidden For Now
 
