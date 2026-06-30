@@ -1,5 +1,29 @@
 # Decision Log
 
+## 2026-06-30: Phase 3.7 — Runtime QA + Schema Fix
+
+Commit `767d30f`. File: `supabase/schema-complete.sql`.
+
+The live Supabase project was missing the `business_profiles` table, causing 404 errors when admin loaded the Website Profiles section. The schema definition was added to `supabase/schema-complete.sql` and applied successfully in the Supabase SQL Editor. No app code was changed.
+
+Runtime QA passed:
+- Logged-in admin
+- Website Profiles loading with no Supabase 404s
+- Create business profile + persist after hard refresh
+- Edit profile
+- Preview via `/website-preview/bp_...` with generated website content
+- AI Content badge
+- Staleness badge after profile edit
+- Reset to blueprint
+- Delete + persist after hard refresh
+
+Key decisions:
+- **Schema applied via SQL Editor** — `supabase/schema-complete.sql` is the canonical schema definition; it was applied to the live project manually. No migration tooling involved.
+- **No app code changed** — the missing table was the only runtime blocker; all application logic was already correct after commits `8bb8abb` and `30418b8`.
+- **RLS/owner_id enforcement deferred** — `business_profiles` has no RLS policy. The table is not public-launch-ready. Enforcement is a separate approved security slice; do not add RLS until that slice is explicitly scoped and approved.
+- **Legacy localStorage import edge case deferred** — only action-worthy if it is confirmed that an old Scrub Club localStorage profile needs importing into the live project. No action until confirmed.
+- **Known UX follow-ups recorded (not blocking):** admin hard refresh resets selected section back to Overview; generated timestamp shows date only (not exact time). Both require separate approved slices.
+
 ## 2026-06-28: Phase 3.7 Slice E — One-Time localStorage Profile Import
 
 Commit `30418b8`. Files: `lib/business/storage.ts`, `app/components/admin/BusinessSection.tsx`.

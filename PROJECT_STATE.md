@@ -15,7 +15,7 @@
 
 **Important separation rule:** `scrub-club-app` is a separate proof-model pressure washing app at `/Users/grantdriskell/Documents/GitHub/scrub-club-app`. Do not copy assumptions, file paths, schema, or app architecture between repos without explicit approval.
 
-**Current phase:** Phase 3.7 fully complete (2026-06-28). Business profile storage migrated to Supabase (Slices B+C+D); one-time localStorage import added (Slice E).
+**Current phase:** Phase 3.7 core runtime-verified (2026-06-30). Business profile storage migrated to Supabase (Slices B+C+D); one-time localStorage import added (Slice E). Live Supabase project had a missing `business_profiles` table (causing 404s); schema added in commit `767d30f` and applied via SQL Editor. Runtime QA passed.
 
 **Current product rule:** the base website builder must work with zero AI keys. Blueprint/fallback generation remains the default. AI and future tool modules are optional roadmap layers unless explicitly approved.
 
@@ -190,7 +190,7 @@ Bug fixed during QA: `premium-minimal` style pack missing from website-preview s
 
 ## 5. Current Stop Point
 
-**Phase 3.7 fully complete (2026-06-28). Business profile storage migrated to Supabase (Slices B+C+D); one-time localStorage import shipped (Slice E).**
+**Phase 3.7 core runtime-verified (2026-06-30). Business profile storage migrated to Supabase (Slices B+C+D); one-time localStorage import shipped (Slice E). Live Supabase table confirmed present and runtime QA passed.**
 
 Phase 3.4d.2 shipped as commit `6540db5`. Phase 3.5 confirmed complete via audit on 2026-06-28 — no new commits required; all components were already present in the repo.
 
@@ -231,6 +231,29 @@ Commit `30418b8`. Files changed: `lib/business/storage.ts`, `app/components/admi
 - Known: imported profiles may show the staleness badge because `updatedAt` is refreshed during upsert.
 - No RLS policies. No service role client. No share tokens. No preview route refactor. No owner_id enforcement. No schema changes.
 - Build: 22/22 routes, 0 TypeScript errors.
+
+### Phase 3.7 — Runtime QA + Schema Fix (2026-06-30)
+
+Commit `767d30f`. File changed: `supabase/schema-complete.sql`.
+
+The live Supabase project was missing the `business_profiles` table, causing 404 errors when admin loaded Website Profiles. The schema definition was added to `supabase/schema-complete.sql` and applied successfully in the Supabase SQL Editor. No app code was changed.
+
+**Runtime QA passed:**
+- Logged-in admin: ✅
+- Website Profiles loading (no Supabase 404s): ✅
+- Create business profile (persists after hard refresh): ✅
+- Edit profile: ✅
+- Preview via `/website-preview/bp_...` with generated website content: ✅
+- AI Content badge: ✅
+- Staleness badge after edit: ✅
+- Reset to blueprint: ✅
+- Delete (persists after hard refresh): ✅
+
+**Known follow-ups (not blocking — require separate approval before acting):**
+- Legacy localStorage import edge case: only relevant if an old Scrub Club localStorage profile needs importing; no action until confirmed needed.
+- Admin hard refresh resets selected section back to Overview (UX regression, not a data bug).
+- Generated timestamp shows date only, not exact time.
+- `business_profiles` has no RLS/owner_id enforcement — not public-launch-ready. RLS/owner_id enforcement must be a separate approved security slice.
 
 ### Phase 3.5 — Generate Website Content (complete, confirmed via audit 2026-06-28)
 
@@ -885,4 +908,4 @@ Every step requires explicit owner approval before anything is published, listed
 
 ---
 
-*Last updated: Phase 3.7 fully complete (2026-06-28). Business profile storage migrated to Supabase (commit `8bb8abb`); one-time localStorage import added (commit `30418b8`).*
+*Last updated: Phase 3.7 runtime QA verified (2026-06-30). Missing `business_profiles` table added to live Supabase project (commit `767d30f`, SQL Editor). Full runtime QA passed. RLS/owner_id enforcement is a separate future security slice.*

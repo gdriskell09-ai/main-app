@@ -18,6 +18,7 @@
 - Phase 3.6 complete. Parked (require explicit approval): content preview/read-only display on card, inline editing of generated content.
 - Phase 3.7 Slices B+C+D complete (2026-06-28) — Business profile storage migrated from localStorage to Supabase. Commit `8bb8abb`. Files: `lib/business/storage.ts`, `BusinessSection.tsx`, `AdminApp.tsx`, `[businessId]/page.tsx`.
 - Phase 3.7 Slice E complete (2026-06-28) — One-time localStorage → Supabase profile import. Commit `30418b8`. Files: `lib/business/storage.ts`, `BusinessSection.tsx`. `migrateLocalStorageProfiles()` runs on first admin Websites load; sets `bp_migrated` flag after all upserts succeed.
+- Phase 3.7 runtime QA passed (2026-06-30) — Live Supabase project had a missing `business_profiles` table (causing 404s). Schema definition added to `supabase/schema-complete.sql` (commit `767d30f`) and applied via SQL Editor. No app code changed. All runtime QA scenarios passed (see PROJECT_STATE.md §5 for full QA checklist).
 
 ## Current Approved Work
 
@@ -62,14 +63,22 @@ Install only when explicitly requested.
 
 Commit `30418b8`. `migrateLocalStorageProfiles()` added to `lib/business/storage.ts`. Runs on first admin Websites load; reads `localStorage["main_app_business_profiles"]`, upserts each profile to Supabase via `saveProfile`, sets `localStorage["bp_migrated"] = "true"`. localStorage data not deleted.
 
-**Still parked (require separate approval):**
-- RLS policies (`owner_id` enforcement)
+**Runtime QA verified (2026-06-30):** live Supabase table was missing; schema commit `767d30f` fixed it. All QA scenarios passed.
+
+**Still parked (require separate approval before starting):**
+- RLS policies (`owner_id` enforcement) — must be a separate approved security slice
 - Service role client
 - Preview page refactor
 - Share token table
 - `publicPreviewEnabled` field
 - Public preview route
 - Dropping localStorage reads entirely (future cleanup after `bp_migrated` is confirmed set)
+
+**Known follow-ups (not blocking — require separate approval before acting):**
+- Legacy localStorage import edge case: only relevant if old Scrub Club localStorage profile needs importing.
+- Admin hard refresh resets selected section back to Overview (UX regression, not a data bug).
+- Generated timestamp shows date only, not exact time.
+- `business_profiles` has no RLS/owner_id enforcement — not public-launch-ready.
 
 ## Forbidden For Now
 
