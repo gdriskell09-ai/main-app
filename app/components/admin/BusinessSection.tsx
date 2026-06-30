@@ -13,6 +13,7 @@ import {
 } from "@/lib/business/storage";
 import { getBlueprint } from "@/lib/business/blueprints/index";
 import {
+  peekWebsiteProfileDraft,
   consumeWebsiteProfileDraft,
   consumeWebsiteProfilePendingEdit,
 } from "@/lib/business/draftProfile";
@@ -135,7 +136,7 @@ function Field({
 type View = "list" | "create" | "edit";
 type GenStatus = "idle" | "generating" | "success" | "error";
 
-export default function BusinessSection() {
+export default function BusinessSection({ onNavigate }: { onNavigate?: (section: string) => void } = {}) {
   const [view, setView]         = useState<View>("list");
   const [profiles, setProfiles] = useState<BusinessProfile[]>([]);
   const [editing, setEditing]   = useState<BusinessProfile | null>(null);
@@ -154,8 +155,10 @@ export default function BusinessSection() {
     void (async () => {
       await migrateLocalStorageProfiles();
       void load();
-      // Consume a pending draft (from Customer panel or Copy Kit)
-      const draft = consumeWebsiteProfileDraft();
+      // Peek at the pending draft (from Customer panel or Copy Kit) without consuming it.
+      // The draft stays in sessionStorage so navigating away and back re-opens the editor.
+      // It is consumed (deleted) only on explicit save or cancel.
+      const draft = peekWebsiteProfileDraft();
       if (draft) {
         setPrefillData(draft);
         setEditing(null);
@@ -189,10 +192,15 @@ export default function BusinessSection() {
   }
 
   function handleSaved() {
+    consumeWebsiteProfileDraft();
+    const shouldReturnToCustomers = !editing && !!prefillData?.customer_id;
     load();
     setView("list");
     setEditing(null);
     setPrefillData(null);
+    if (shouldReturnToCustomers) {
+      onNavigate?.("customers");
+    }
   }
 
   async function handleDelete(id: string) {
@@ -246,7 +254,7 @@ export default function BusinessSection() {
         existing={editing}
         prefill={prefillData ?? undefined}
         onSaved={handleSaved}
-        onCancel={() => { setView("list"); setEditing(null); setPrefillData(null); }}
+        onCancel={() => { consumeWebsiteProfileDraft(); setView("list"); setEditing(null); setPrefillData(null); }}
       />
     );
   }

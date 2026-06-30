@@ -30,6 +30,23 @@ function consume<T>(key: string): T | null {
   }
 }
 
+function peek<T>(key: string): T | null {
+  if (typeof window === "undefined") return null;
+  const raw = sessionStorage.getItem(key);
+  if (!raw) return null;
+  try {
+    const entry = JSON.parse(raw) as Timed<T>;
+    if (Date.now() - entry.createdAt > TTL_MS) {
+      sessionStorage.removeItem(key);
+      return null;
+    }
+    return entry.data;
+  } catch {
+    sessionStorage.removeItem(key);
+    return null;
+  }
+}
+
 // ── Website Profile draft (new-profile prefill via sessionStorage) ──
 
 export function createWebsiteProfileDraft(prefill: Partial<BusinessProfile>): void {
@@ -42,6 +59,10 @@ export function createWebsiteProfileDraft(prefill: Partial<BusinessProfile>): vo
 
 export function consumeWebsiteProfileDraft(): Partial<BusinessProfile> | null {
   return consume<Partial<BusinessProfile>>(DRAFT_KEY);
+}
+
+export function peekWebsiteProfileDraft(): Partial<BusinessProfile> | null {
+  return peek<Partial<BusinessProfile>>(DRAFT_KEY);
 }
 
 // ── Pending edit (open a specific existing profile's editor on mount) ─

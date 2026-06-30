@@ -2210,7 +2210,7 @@ export default function AdminApp() {
           {section === "canvass"      && <CanvassSection />}
           {section === "contracts"    && <ContractVaultSection />}
           {section === "ai_generator" && <AiGeneratorSection onNavigate={setSection} />}
-          {section === "websites"     && <BusinessSection />}
+          {section === "websites"     && <BusinessSection onNavigate={(s) => setSection(s as Section)} />}
           {section === "settings"     && <SettingsSection email={userEmail} />}
         </div>
       </div>
