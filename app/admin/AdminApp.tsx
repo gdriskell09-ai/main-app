@@ -1894,8 +1894,13 @@ export default function AdminApp() {
 
   const [section, setSection] = useState<Section>(() => {
     const nav = consumeNavTarget();
-    return nav === "websites" ? "websites" : "dashboard";
+    if (nav === "websites") return "websites";
+    return (sessionStorage.getItem("admin_active_section") as Section | null) ?? "dashboard";
   });
+
+  useEffect(() => {
+    sessionStorage.setItem("admin_active_section", section);
+  }, [section]);
   const [leads, setLeads] = useState<Lead[]>([]);
   const [customers, setCustomers] = useState<Customer[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);

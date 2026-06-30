@@ -558,7 +558,7 @@ export default function BusinessSection() {
                   <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
                     <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
                       <span style={{ fontSize: "11px", color: "#94a3b8" }}>
-                        Generated {new Date(p.generatedContent.generatedAt).toLocaleDateString()}
+                        Generated {new Date(p.generatedContent.generatedAt).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}
                       </span>
                       {isStale && (
                         <span
