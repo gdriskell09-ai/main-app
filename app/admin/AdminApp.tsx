@@ -598,11 +598,13 @@ function CustomerDetail({
   const [confirmDelete, setConfirmDelete] = useState(false);
   const [submitting, setSubmitting]       = useState(false);
   const [profiles, setProfiles]           = useState<BusinessProfile[]>([]);
+  const [profilesLoading, setProfilesLoading] = useState(true);
 
   useEffect(() => {
     (async () => {
       const loaded = await getAllProfiles();
       setProfiles(loaded);
+      setProfilesLoading(false);
     })();
   }, []);
 
@@ -614,7 +616,7 @@ function CustomerDetail({
   const bizType     = linkedLead?.type ?? null;
 
   // Linked business profile (soft-link via localStorage)
-  const linkedProfile = profiles.find((p) => p.customer_id === customer.id) ?? null;
+  const linkedProfile = profiles.find((p) => p.customer_id === String(customer.id)) ?? null;
 
   // Customer type signals (derived, no extra DB column needed)
   const isWebsiteClient   = !!linkedProfile || (linkedLead?.need?.toLowerCase().includes("website") ?? false);
@@ -814,6 +816,10 @@ function CustomerDetail({
               </div>
             </div>
           </div>
+        ) : profilesLoading ? (
+          <p className="rounded-xl border border-dashed border-black/10 p-3 text-center text-xs text-slate-400">
+            Loading…
+          </p>
         ) : (
           <p className="rounded-xl border border-dashed border-black/10 p-3 text-center text-xs text-slate-400">
             No website profile yet.{bizType ? ` Will pre-fill: ${bizType}.` : ""}
