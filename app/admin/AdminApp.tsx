@@ -336,10 +336,10 @@ function DashboardSection({
 // ─── Lead detail ──────────────────────────────────────────────
 
 function LeadDetail({
-  lead, notes, saving, hasCustomer,
+  lead, notes, saving, hasCustomer, creatingCustomer,
   onClose, onStatusChange, onNotesChange, onNotesSave, onDelete, onCreateCustomer, onViewCustomer,
 }: {
-  lead: Lead; notes: string; saving: boolean; hasCustomer: boolean;
+  lead: Lead; notes: string; saving: boolean; hasCustomer: boolean; creatingCustomer: boolean;
   onClose: () => void; onStatusChange: (s: LeadStatus) => void;
   onNotesChange: (v: string) => void; onNotesSave: () => void;
   onDelete: () => void; onCreateCustomer: () => void; onViewCustomer?: () => void;
@@ -385,9 +385,9 @@ function LeadDetail({
         <div className="mt-4 rounded-[1.5rem] border border-black/5 bg-[#f7f5ef] px-4 py-3">
           <div className="flex items-center justify-between gap-3">
             <p className="text-sm text-slate-600">No customer record yet.</p>
-            <button onClick={onCreateCustomer}
-              className="shrink-0 rounded-full bg-slate-950 px-4 py-2 text-xs font-bold text-white transition hover:bg-slate-800">
-              Create customer from lead
+            <button onClick={onCreateCustomer} disabled={creatingCustomer}
+              className="shrink-0 rounded-full bg-slate-950 px-4 py-2 text-xs font-bold text-white transition hover:bg-slate-800 disabled:opacity-50 disabled:cursor-not-allowed">
+              {creatingCustomer ? "Creating…" : "Create customer from lead"}
             </button>
           </div>
         </div>
@@ -458,6 +458,7 @@ function LeadsSection({
   const [search, setSearch] = useState("");
   const [notes, setNotes] = useState("");
   const [saving, setSaving] = useState(false);
+  const [creatingCustomer, setCreatingCustomer] = useState(false);
 
   const selected = leads.find((l) => l.id === selectedLeadId) ?? null;
 
@@ -482,8 +483,13 @@ function LeadsSection({
     onUpdateStatus(selected.id, status);
   }
   async function handleCreateCustomer() {
-    if (!selected) return;
-    await onCreateCustomer(selected);
+    if (!selected || creatingCustomer) return;
+    setCreatingCustomer(true);
+    try {
+      await onCreateCustomer(selected);
+    } finally {
+      setCreatingCustomer(false);
+    }
   }
 
   const counts: Record<string, number> = {
@@ -499,7 +505,7 @@ function LeadsSection({
     });
 
   const detailProps = selected ? {
-    lead: selected, notes, saving,
+    lead: selected, notes, saving, creatingCustomer,
     hasCustomer: leadIdSet.has(selected.id),
     onClose: () => onSelectLead(null),
     onStatusChange: handleStatusChange,
