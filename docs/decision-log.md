@@ -1,5 +1,31 @@
 # Decision Log
 
+## 2026-07-01: Phone Formatting / Validation — US MVP (commits `dfb938c`, `0cad394`)
+
+Commits `dfb938c` and `0cad394`. Files changed: `BusinessSection.tsx`, `AdminApp.tsx`, `AdminDashboard.tsx`, `InvoicePrint.tsx`, `FooterPremium.tsx`, `app/contact/page.tsx`. Build: 22/22 routes, 0 TypeScript errors before each commit. No schema, RLS, service role, share tokens, preview refactor, dependencies, API route, storage, type, or country-code changes.
+
+### Why inline helpers instead of a shared utility module
+
+Adding a shared `lib/utils/phone.ts` would require importing it in five different file locations — two of which (`FooterPremium.tsx`, `InvoicePrint.tsx`) are in separate route trees that should stay independent. Duplicating the three small helpers (total ~15 lines) inline in each file avoids a new module dependency and keeps each file self-contained. If the helpers grow or diverge later, consolidating to a shared module is a straightforward refactor.
+
+### formatPhone fallback behavior
+
+`formatPhone` returns the original string unchanged if digit count ≠ 10. This means:
+- Existing Supabase records with any format (`"555-555-5555"`, `"5551234567"`, `"(555) 555-5555"`, international numbers) continue to display as-is rather than going blank.
+- The MVP is US-only; no `+1` prefix handling. If a stored value starts with `+1`, stripping non-digits gives 11 digits, which fails the `=== 10` check and falls back to raw display.
+
+### Website Profile validation scope
+
+Soft validation only — blocks save when phone is non-empty and digit count ≠ 10. Empty phone is always allowed (field is optional). Existing saved profiles with odd phone formats are not affected (they are read-only display).
+
+### Public contact form: no server-side change
+
+`app/api/contact/route.ts` is unchanged. Phone is optional and stored as `phone?.trim() || null`. The formatter runs client-side only — a user who pastes an international number or bypasses JS still gets their raw value stored, which displays as-is in the admin via the `formatPhone` fallback.
+
+### Lead → Create Customer restored
+
+`34b55b0` had removed the "Create customer" button from `LeadDetail` per user preference at the time. The user later confirmed they want it back. Restoration was one JSX block: when `!hasCustomer`, show "No customer record yet." banner with "Create customer from lead" button. The underlying `onCreateCustomer` prop and `handleCreateCustomer` function (which inserts to `customers` table and navigates to the new customer) were never removed — only the UI entry point was absent.
+
 ## 2026-07-01: Website Profile Save Actions — Sticky Footer (commit `52269bc`)
 
 Commit `52269bc`. File changed: `app/components/admin/BusinessSection.tsx` only. Build: 22/22 routes, 0 TypeScript errors before commit. Working tree clean after push. No schema, RLS, service role, share tokens, preview refactor, dependencies, AdminApp, Lead/Customer, phone validation, or full redesign work.

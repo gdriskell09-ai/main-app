@@ -39,6 +39,10 @@
 - Website Profile save actions / floating buttons UX complete (2026-07-01) — Single commit `52269bc`, build passed (22/22 routes, 0 TypeScript errors) before commit. File: `app/components/admin/BusinessSection.tsx` only.
   - `52269bc`: Added sticky footer action bar to `BusinessEditor`. Form wrapper changed to `<form className="w-full h-full flex flex-col">` with scrollable inner content region and a `flex-shrink: 0` footer bar. "Create Business Profile" / "Save Changes" and "Cancel" now stay visible at all times while editing or creating a Website Profile. "← Back to list" button given explicit `type="button"` to prevent accidental submit. Inner padding reduced from 80px to 24px. No business logic, validation, storage, draft, or submit handler changes. No AdminApp/Lead/Customer/schema/RLS/service role/share token/preview refactor/dependency/phone-validation/full-redesign changes.
 
+- Phone formatting / validation (US MVP) complete (2026-07-01) — Two commits `dfb938c` and `0cad394`, build passed (22/22 routes, 0 TypeScript errors) before each commit. Files: `app/components/admin/BusinessSection.tsx`, `app/admin/AdminApp.tsx`, `app/admin/AdminDashboard.tsx`, `app/admin/invoice/[id]/InvoicePrint.tsx`, `app/components/website-engine/sections/FooterPremium.tsx`, `app/contact/page.tsx`.
+  - `dfb938c`: Inline `digitsOnly`/`formatPhone`/`formatPhoneInput` helpers added (no dependencies). Website Profile phone input auto-formats and validates (blocks non-empty non-10-digit on save). Add Customer input gets `type="tel"` + auto-format. Lead/customer/admin/invoice/footer display uses `formatPhone` (falls back to raw string for non-10-digit values). No schema/API/storage/type changes.
+  - `0cad394`: Public contact form phone input wired to `formatPhoneInput`; `app/api/contact/route.ts` unchanged. Lead detail "Create customer from lead" button restored using existing `onCreateCustomer` prop and handler (no new logic or DB columns).
+
 ## Current Approved Work
 
 - Roadmap and documentation organization.

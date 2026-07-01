@@ -988,4 +988,19 @@ Commit `52269bc`. File changed: `app/components/admin/BusinessSection.tsx` only.
 - **Inner padding reduced from 80px to 24px** — the 80px was a legacy clearance hack.
 - **No logic changes** — `handleSubmit`, validation, draft persistence, `onSaved`, `onCancel`, and all storage calls untouched.
 
-*Last updated: Website Profile save actions / floating buttons UX complete (2026-07-01). Latest pushed commit: `52269bc` (keep website profile save actions visible). Sticky footer action bar added to BusinessEditor. No schema/RLS/service role/share token/preview refactor/dependency changes. Next recommended code slice: phone number formatting/validation.*
+### Phone Formatting / Validation — US MVP (complete, 2026-07-01)
+
+Commits `dfb938c` and `0cad394`. Build: 22/22 routes, 0 TypeScript errors before each commit. Working tree clean after push. No schema, RLS, service role, share tokens, preview refactor, dependencies, API route, storage, type, country-code, or full redesign changes.
+
+Files changed across both commits: `app/components/admin/BusinessSection.tsx`, `app/admin/AdminApp.tsx`, `app/admin/AdminDashboard.tsx`, `app/admin/invoice/[id]/InvoicePrint.tsx`, `app/components/website-engine/sections/FooterPremium.tsx`, `app/contact/page.tsx`.
+
+- **Helpers added inline** (`digitsOnly`, `formatPhone`, `formatPhoneInput`) — no dependencies, duplicated where needed so no shared module is required.
+- **`formatPhone(value)`** — strips non-digits; if exactly 10 digits, returns `(XXX) XXX-XXXX`; otherwise returns the original string unchanged. Existing odd-format phone values continue to display rather than disappearing.
+- **`formatPhoneInput(value)`** — strips non-digits, caps at 10, progressively masks while typing: `XXX` → `(XXX) XXX` → `(XXX) XXX-XXXX`.
+- **Website Profile editor (`BusinessSection.tsx`):** phone input uses `formatPhoneInput` on change. `validate()` blocks save when phone is non-empty and doesn't contain exactly 10 digits (soft — blank phone still saves).
+- **Add Customer form (`AdminApp.tsx`):** phone input gains `type="tel"` and `formatPhoneInput` on change. No blocking validation (admin context, optional field).
+- **Display locations:** lead detail, customer detail, customer list row, invoice print, website footer — all use `formatPhone`. `FooterPremium` `tel:` href behavior unchanged (already stripped non-digits correctly).
+- **Public contact form (`app/contact/page.tsx`):** phone input uses `formatPhoneInput` on change; field remains optional; no server-side validation added; `app/api/contact/route.ts` unchanged.
+- **Lead → Create Customer restored (`AdminApp.tsx`):** `LeadDetail` now shows "No customer record yet." + "Create customer from lead" button when `!hasCustomer`. Uses the existing `onCreateCustomer` prop and `handleCreateCustomer` handler (which were retained in `34b55b0` but not surfaced in the UI). No new logic, no new DB columns.
+
+*Last updated: Phone formatting/validation (US MVP) complete (2026-07-01). Latest pushed commits: `dfb938c`, `0cad394`. No schema/RLS/service role/share token/preview refactor/dependency/API/storage/type/country-code changes. Next recommended task: Phase 3.7 admin workflow QA pass (not a new feature).*
