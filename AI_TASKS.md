@@ -46,6 +46,9 @@
 - Phase 3.7 QA bug fix — Website Profile edit context (2026-07-01) — Single commit `8471d79`, build passed (22/22 routes, 0 TypeScript errors) before commit. File: `app/components/admin/BusinessSection.tsx` only.
   - `8471d79`: Added `editFromCustomer: boolean` state. Set `true` only in Path A (customer-launched create draft with `customer_id`) and Path B (pending-edit signal from Customer detail "Edit" button). Set `false` in `openEdit()` (profiles list), `openCreate()` (manual), and Path C (reload recovery). `handleSaved()` now gates customer navigation on `editFromCustomer` — edits opened from Website Profiles list/detail stay in Website Profiles on save. No AdminApp/Lead/schema/RLS/service role/share token/preview refactor/dependency/phone/full-redesign changes.
 
+- Phase 3.7 QA bug fix — Lead Create Customer double-click guard (2026-07-01) — Single commit `1ed1fd7`, build passed (22/22 routes, 0 TypeScript errors) before commit. File: `app/admin/AdminApp.tsx` only.
+  - `1ed1fd7`: Added `creatingCustomer` boolean state to `LeadsSection`. `handleCreateCustomer` now guards against re-entry (`if (!selected || creatingCustomer) return`), sets the flag `true` before awaiting, and resets it in `finally`. `creatingCustomer` passed to `LeadDetail` as a prop; button disabled and shows "Creating…" while active. No business logic, navigation, DB call, schema, RLS, service role, share token, preview refactor, dependency, API, storage, type, phone, Website Profiles, or full redesign changes. Phase 3.7 admin QA bug-fix batch is now clean.
+
 ## Current Approved Work
 
 - Roadmap and documentation organization.

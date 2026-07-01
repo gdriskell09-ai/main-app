@@ -1,5 +1,26 @@
 # Decision Log
 
+## 2026-07-01: Lead Create Customer Double-Click Guard (commit `1ed1fd7`)
+
+Commit `1ed1fd7`. File changed: `app/admin/AdminApp.tsx` only. Build: 22/22 routes, 0 TypeScript errors before commit. Working tree clean after push. No schema, RLS, service role, share tokens, preview refactor, dependencies, API, storage, type, phone, Website Profiles, or full redesign changes.
+
+### Problem
+
+Phase 3.7 QA identified that the "Create customer from lead" button in `LeadDetail` had no loading/disabled guard. The async `handleCreateCustomer` call in `LeadsSection` could be triggered multiple times by rapid clicking before the first call completed.
+
+### Fix: `creatingCustomer` state guard
+
+Added `creatingCustomer: boolean` state to `LeadsSection`. `handleCreateCustomer` now:
+- Returns early if `!selected || creatingCustomer` (prevents re-entry while in-flight).
+- Sets `creatingCustomer(true)` before `await onCreateCustomer(selected)`.
+- Resets `creatingCustomer(false)` in `finally` (covers both success and error paths).
+
+`creatingCustomer` is passed to `LeadDetail` as a new prop (added to the component's props interface). The "Create customer from lead" button is `disabled={creatingCustomer}` and shows `"Creating…"` while active, with `disabled:opacity-50 disabled:cursor-not-allowed` classes for visual feedback.
+
+### Behavior unchanged
+
+Lead → Customer creation/link/navigation behavior is otherwise unchanged. `handleCreateCustomer` in `AdminApp` (the Supabase insert, lead linking, and navigation) is untouched. No new DB columns.
+
 ## 2026-07-01: Website Profile Edit Context Bug Fix (commit `8471d79`)
 
 Commit `8471d79`. File changed: `app/components/admin/BusinessSection.tsx` only. Build: 22/22 routes, 0 TypeScript errors before commit. No schema, RLS, service role, share tokens, preview refactor, dependencies, API, storage, type, phone, AdminApp, or full-redesign changes.

@@ -1017,6 +1017,14 @@ Commit `8471d79`. File changed: `app/components/admin/BusinessSection.tsx` only.
 - **Website Profiles list "Edit Profile" → Save** now returns to Website Profiles list. ✓
 - **Reload recovery edits → Save** now returns to Website Profiles list (context lost on reload). ✓
 
-**Known remaining gap (low priority, not fixed in this slice):** The "Create customer from lead" button in `LeadDetail` has no loading/disabled guard against double-click. Pre-existing behavior, not introduced by recent slices.
+**Known remaining gap:** Resolved in commit `1ed1fd7` — the "Create customer from lead" button now disables while creating. See "Phase 3.7 QA Bug Fix — Lead Create Customer Double-Click Guard" below.
 
-*Last updated: Phase 3.7 QA bug fix complete (2026-07-01). Latest pushed commit: `8471d79` (preserve website profile edit context). No schema/RLS/service role/share token/preview refactor/dependency/API/storage/type/phone/AdminApp/full-redesign changes. Phase 3.7 admin workflow QA pass is now complete. Next step: next feature planning.*
+### Phase 3.7 QA Bug Fix — Lead Create Customer Double-Click Guard (complete, 2026-07-01)
+
+Commit `1ed1fd7`. File changed: `app/admin/AdminApp.tsx` only. Build: 22/22 routes, 0 TypeScript errors before commit. Working tree clean after push. No schema, RLS, service role, share tokens, preview refactor, dependencies, API, storage, type, phone, Website Profiles, or full redesign changes.
+
+**Bug fixed:** Phase 3.7 QA identified that the "Create customer from lead" button in `LeadDetail` had no loading/disabled guard. Rapid double-clicks could trigger multiple concurrent customer creation calls.
+
+**Fix:** Added `creatingCustomer` boolean state to `LeadsSection`. `handleCreateCustomer` sets the guard `true` before awaiting `onCreateCustomer(selected)` and resets it in `finally`. `creatingCustomer` is passed to `LeadDetail` as a prop; the button is `disabled` while true and shows "Creating…" instead of "Create customer from lead". Visual feedback: `disabled:opacity-50 disabled:cursor-not-allowed`. Lead → Customer creation/link/navigation behavior is otherwise unchanged.
+
+*Last updated: Phase 3.7 QA double-click guard fix complete (2026-07-01). Latest pushed commit: `1ed1fd7` (guard lead customer creation action). No schema/RLS/service role/share token/preview refactor/dependency/API/storage/type/phone/Website Profiles/full-redesign changes. Phase 3.7 admin QA bug-fix batch is now clean. Next step: next feature planning.*
