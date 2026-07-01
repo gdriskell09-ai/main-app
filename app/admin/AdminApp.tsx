@@ -332,6 +332,7 @@ function LeadDetail({
         <div className="min-w-0">
           <h2 className="text-xl font-semibold text-slate-950">{lead.name}</h2>
           {lead.business && <p className="mt-0.5 text-sm text-slate-500">{lead.business}</p>}
+          <p className="mt-0.5 text-xs text-slate-400">Lead #{lead.id}</p>
         </div>
         <button onClick={onClose} className="shrink-0 rounded-full border border-black/10 px-3 py-1 text-xs text-slate-500 transition hover:border-slate-400">Close</button>
       </div>
@@ -348,27 +349,28 @@ function LeadDetail({
         </div>
       </div>
 
-      {lead.status === "converted" && (
-        <div className="mt-4 rounded-[1.5rem] border border-amber-200 bg-amber-50 px-4 py-3">
-          {hasCustomer ? (
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-sm font-medium text-amber-800">✓ Customer record exists for this lead.</p>
-              {onViewCustomer && (
-                <button onClick={onViewCustomer}
-                  className="shrink-0 rounded-full bg-amber-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-amber-700">
-                  View customer ↗
-                </button>
-              )}
-            </div>
-          ) : (
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-sm text-amber-800">Converted — create a customer record to track jobs and quotes.</p>
-              <button onClick={onCreateCustomer}
-                className="shrink-0 rounded-full bg-amber-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-amber-700">
-                Create customer
+      {hasCustomer && (
+        <div className="mt-4 rounded-[1.5rem] border border-emerald-200 bg-emerald-50 px-4 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm font-medium text-emerald-800">✓ Customer record linked.</p>
+            {onViewCustomer && (
+              <button onClick={onViewCustomer}
+                className="shrink-0 rounded-full bg-emerald-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-emerald-700">
+                View customer ↗
               </button>
-            </div>
-          )}
+            )}
+          </div>
+        </div>
+      )}
+      {!hasCustomer && lead.status === "converted" && (
+        <div className="mt-4 rounded-[1.5rem] border border-amber-200 bg-amber-50 px-4 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm text-amber-800">Converted — create a customer record to track jobs and quotes.</p>
+            <button onClick={onCreateCustomer}
+              className="shrink-0 rounded-full bg-amber-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-amber-700">
+              Create customer
+            </button>
+          </div>
         </div>
       )}
 
@@ -537,6 +539,11 @@ function LeadsSection({
                 {lead.need && (
                   <span className="rounded-full bg-sky-50 px-2 py-0.5 text-[10px] font-medium text-sky-700">
                     {lead.need}
+                  </span>
+                )}
+                {leadIdSet.has(lead.id) && (
+                  <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-semibold text-emerald-700">
+                    Customer ✓
                   </span>
                 )}
               </div>
@@ -759,6 +766,7 @@ function CustomerDetail({
         <div className="min-w-0">
           <h2 className="text-xl font-semibold text-slate-950">{customer.name}</h2>
           {customer.business && <p className="mt-0.5 text-sm text-slate-500">{customer.business}</p>}
+          <p className="mt-0.5 text-xs text-slate-400">Customer #{customer.id}</p>
         </div>
         <button onClick={onClose} className="shrink-0 rounded-full border border-black/10 px-3 py-1 text-xs text-slate-500 transition hover:border-slate-400">Close</button>
       </div>
@@ -1955,7 +1963,18 @@ export default function AdminApp() {
   const [customersLoading, setCustomersLoading] = useState(true);
   const [userEmail, setUserEmail] = useState("");
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
-  const [selectedLeadId, setSelectedLeadId] = useState<number | null>(null);
+  const [selectedLeadId, setSelectedLeadId] = useState<number | null>(() => {
+    const v = sessionStorage.getItem("admin_selected_lead");
+    return v ? Number(v) : null;
+  });
+
+  useEffect(() => {
+    if (selectedLeadId != null) {
+      sessionStorage.setItem("admin_selected_lead", String(selectedLeadId));
+    } else {
+      sessionStorage.removeItem("admin_selected_lead");
+    }
+  }, [selectedLeadId]);
 
   const loadLeads = useCallback(async () => {
     setLeadsLoading(true);
