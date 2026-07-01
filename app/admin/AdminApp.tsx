@@ -2267,6 +2267,7 @@ export default function AdminApp() {
             <BusinessSection
               onNavigate={(s) => setSection(s as Section)}
               onNavigateToCustomer={(id) => { setSelectedCustomerId(id); setSection("customers"); }}
+              customers={customers.map((c) => ({ id: c.id, name: c.name }))}
             />
           )}
           {section === "settings"     && <SettingsSection email={userEmail} />}

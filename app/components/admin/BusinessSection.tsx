@@ -140,7 +140,7 @@ function Field({
 type View = "list" | "create" | "edit";
 type GenStatus = "idle" | "generating" | "success" | "error";
 
-export default function BusinessSection({ onNavigate, onNavigateToCustomer }: { onNavigate?: (section: string) => void; onNavigateToCustomer?: (customerId: string) => void } = {}) {
+export default function BusinessSection({ onNavigate, onNavigateToCustomer, customers }: { onNavigate?: (section: string) => void; onNavigateToCustomer?: (customerId: string) => void; customers?: Array<{ id: string | number; name: string }> } = {}) {
   const [view, setView]         = useState<View>("list");
   const [profiles, setProfiles] = useState<BusinessProfile[]>([]);
   const [editing, setEditing]   = useState<BusinessProfile | null>(null);
@@ -150,6 +150,10 @@ export default function BusinessSection({ onNavigate, onNavigateToCustomer }: { 
   const [genError,       setGenError]       = useState<Record<string, string>>({});
   const [deleteConfirm,  setDeleteConfirm]  = useState<Record<string, boolean>>({});
   const [clearConfirm,   setClearConfirm]   = useState<Record<string, boolean>>({});
+  const [search,            setSearch]            = useState("");
+  const [activeFilter,      setActiveFilter]      = useState<"all" | "has-client" | "no-client" | "generated" | "stale">("all");
+  const [sort,              setSort]              = useState<"newest" | "updated" | "name" | "industry">("newest");
+  const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
 
   const load = useCallback(async () => {
     const profiles = await getAllProfiles();
@@ -247,6 +251,7 @@ export default function BusinessSection({ onNavigate, onNavigateToCustomer }: { 
       // profile remains in list if delete fails
     }
     setDeleteConfirm((prev) => { const n = { ...prev }; delete n[id]; return n; });
+    if (id === selectedProfileId) setSelectedProfileId(null);
     void load();
   }
 
@@ -285,6 +290,33 @@ export default function BusinessSection({ onNavigate, onNavigateToCustomer }: { 
     setClearConfirm((prev) => { const n = { ...prev }; delete n[p.id]; return n; });
   }
 
+  const displayed = profiles
+    .filter((p) => {
+      if (!search.trim()) return true;
+      const q = search.toLowerCase();
+      return (
+        p.businessName.toLowerCase().includes(q) ||
+        p.industry.toLowerCase().includes(q) ||
+        (p.city ?? "").toLowerCase().includes(q)
+      );
+    })
+    .filter((p) => {
+      const isStaleCheck = !!(p.updatedAt && p.generatedContent?.generatedAt && new Date(p.updatedAt) > new Date(p.generatedContent.generatedAt));
+      if (activeFilter === "has-client")  return !!p.customer_id;
+      if (activeFilter === "no-client")   return !p.customer_id;
+      if (activeFilter === "generated")   return !!p.generatedContent;
+      if (activeFilter === "stale")       return isStaleCheck;
+      return true;
+    })
+    .sort((a, b) => {
+      if (sort === "updated")  return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
+      if (sort === "name")     return a.businessName.localeCompare(b.businessName, undefined, { sensitivity: "base" });
+      if (sort === "industry") return a.industry.localeCompare(b.industry, undefined, { sensitivity: "base" });
+      return new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime();
+    });
+
+  const isFiltered = search.trim() !== "" || activeFilter !== "all";
+
   if (view === "create" || view === "edit") {
     return (
       <BusinessEditor
@@ -311,487 +343,325 @@ export default function BusinessSection({ onNavigate, onNavigateToCustomer }: { 
     );
   }
 
-  // ── List view ──────────────────────────────────────────────────
+  // ── List view (two-panel master/detail) ──────────────────────────
+  const selectedProfile = profiles.find((p) => p.id === selectedProfileId) ?? null;
+
   return (
-    <div className="w-full h-full overflow-y-auto">
-    <div style={{ padding: "32px 16px 64px", maxWidth: "860px" }}>
+    <div className="w-full h-full bs-two-panel">
       <style>{`
+        .bs-two-panel { display: flex; flex-direction: row; overflow: hidden; }
+        .bs-left-panel { width: 272px; flex-shrink: 0; border-right: 1px solid #e8edf2; height: 100%; display: flex; flex-direction: column; background: #ffffff; }
+        .bs-right-panel { flex: 1; height: 100%; overflow-y: auto; }
         @media (max-width: 640px) {
-          .bs-card-grid { grid-template-columns: 1fr !important; }
+          .bs-two-panel { flex-direction: column; }
+          .bs-left-panel { width: 100%; height: auto; max-height: 300px; border-right: none; border-bottom: 1px solid #e8edf2; }
+          .bs-right-panel { flex: 1; min-height: 0; }
         }
       `}</style>
-      {/* Header */}
-      <div
-        style={{
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "space-between",
-          marginBottom: "28px",
-          flexWrap: "wrap",
-          gap: "12px",
-        }}
-      >
-        <div>
-          <h2
-            style={{
-              fontSize: "22px",
-              fontWeight: 700,
-              color: "#0f172a",
-              margin: 0,
-            }}
-          >
-            Website Profiles
-          </h2>
-          <p
-            style={{
-              fontSize: "14px",
-              color: "#64748b",
-              margin: "4px 0 0",
-            }}
-          >
-            Create and manage client profiles. Each profile generates a live website preview.
+
+      {/* ── LEFT PANEL ── */}
+      <div className="bs-left-panel">
+        {/* Header */}
+        <div style={{ padding: "18px 14px 12px", borderBottom: "1px solid #f1f5f9" }}>
+          <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", marginBottom: "4px" }}>
+            <h2 style={{ fontSize: "15px", fontWeight: 700, color: "#0f172a", margin: 0 }}>Website Profiles</h2>
+            <button
+              onClick={openCreate}
+              style={{ padding: "5px 12px", borderRadius: "8px", background: "#0f172a", color: "#ffffff", border: "none", fontSize: "12px", fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}
+            >
+              + New
+            </button>
+          </div>
+          <p style={{ fontSize: "11px", color: "#94a3b8", margin: 0 }}>
+            {profiles.length === 0
+              ? "No profiles yet"
+              : isFiltered
+              ? `${displayed.length} of ${profiles.length} profile${profiles.length === 1 ? "" : "s"}`
+              : `${profiles.length} profile${profiles.length === 1 ? "" : "s"}`}
           </p>
         </div>
-        <button
-          onClick={openCreate}
-          style={{
-            padding: "10px 22px",
-            borderRadius: "12px",
-            background: "#0f172a",
-            color: "#ffffff",
-            border: "none",
-            fontSize: "14px",
-            fontWeight: 600,
-            cursor: "pointer",
-          }}
-        >
-          + New Profile
-        </button>
-      </div>
 
-      {/* Empty state */}
-      {profiles.length === 0 && (
-        <div
-          style={{
-            textAlign: "center",
-            padding: "64px 24px",
-            background: "#f8fafc",
-            borderRadius: "20px",
-            border: "2px dashed #e2e8f0",
-          }}
-        >
-          <div style={{ fontSize: "40px", marginBottom: "16px" }}>🏢</div>
-          <h3
-            style={{
-              fontSize: "18px",
-              fontWeight: 600,
-              color: "#0f172a",
-              margin: "0 0 8px",
-            }}
-          >
-            No business profiles yet
-          </h3>
-          <p style={{ fontSize: "14px", color: "#64748b", margin: "0 0 24px" }}>
-            Create your first profile to generate a website preview.
-          </p>
-          <button
-            onClick={openCreate}
-            style={{
-              padding: "11px 26px",
-              borderRadius: "12px",
-              background: "#0f172a",
-              color: "#ffffff",
-              border: "none",
-              fontSize: "14px",
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            Create First Business
-          </button>
-        </div>
-      )}
-
-      {/* Profile cards */}
-      {profiles.length > 0 && (
-        <div
-          className="bs-card-grid"
-          style={{
-            display: "grid",
-            gap: "16px",
-            gridTemplateColumns: "repeat(auto-fill, minmax(min(340px, 100%), 1fr))",
-          }}
-        >
-          {profiles.map((p) => {
-            const packColor =
-              STYLE_PACKS.find((s) => s.id === p.preferredStylePack)?.color ?? "#0ea5e9";
-            const isStale = !!(
-              p.updatedAt &&
-              p.generatedContent?.generatedAt &&
-              new Date(p.updatedAt) > new Date(p.generatedContent.generatedAt)
-            );
-            return (
-              <div
-                key={p.id}
-                style={{
-                  background: "#ffffff",
-                  border: "1.5px solid #e2e8f0",
-                  borderRadius: "18px",
-                  padding: "22px",
-                  display: "flex",
-                  flexDirection: "column",
-                  gap: "12px",
-                }}
+        {/* Search + sort + filter — only when profiles exist */}
+        {profiles.length > 0 && (
+          <div style={{ padding: "10px 12px 8px", borderBottom: "1px solid #f1f5f9", display: "flex", flexDirection: "column", gap: "7px" }}>
+            <input
+              type="search"
+              placeholder="Search name, industry, city…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              style={{ width: "100%", padding: "7px 10px", borderRadius: "8px", border: "1.5px solid #e2e8f0", fontSize: "12px", color: "#0f172a", background: "#ffffff", outline: "none", boxSizing: "border-box" }}
+            />
+            <div style={{ display: "flex", gap: "6px", alignItems: "center" }}>
+              <span style={{ fontSize: "11px", color: "#94a3b8", flexShrink: 0 }}>Sort</span>
+              <select
+                value={sort}
+                onChange={(e) => setSort(e.target.value as typeof sort)}
+                style={{ flex: 1, padding: "5px 7px", borderRadius: "7px", border: "1.5px solid #e2e8f0", fontSize: "12px", color: "#0f172a", background: "#ffffff", cursor: "pointer" }}
               >
-                {/* Pack color stripe */}
-                <div
-                  style={{
-                    height: "4px",
-                    borderRadius: "2px",
-                    background: `linear-gradient(90deg, ${packColor}, ${packColor}80)`,
-                    marginBottom: "4px",
-                  }}
-                />
-                <div>
-                  <h3
-                    style={{
-                      fontSize: "17px",
-                      fontWeight: 700,
-                      color: "#0f172a",
-                      margin: "0 0 4px",
-                    }}
+                <option value="newest">Newest</option>
+                <option value="updated">Recently Updated</option>
+                <option value="name">Name A→Z</option>
+                <option value="industry">Industry</option>
+              </select>
+            </div>
+            <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+              {(["all", "has-client", "no-client", "generated", "stale"] as const).map((f) => {
+                const labels: Record<typeof f, string> = { all: "All", "has-client": "Has Client", "no-client": "No Client", generated: "Generated", stale: "Stale" };
+                const active = activeFilter === f;
+                return (
+                  <button
+                    key={f}
+                    onClick={() => setActiveFilter(f)}
+                    style={{ padding: "3px 9px", borderRadius: "999px", border: active ? "1.5px solid #0f172a" : "1.5px solid #e2e8f0", background: active ? "#0f172a" : "#ffffff", color: active ? "#ffffff" : "#64748b", fontSize: "11px", fontWeight: 600, cursor: "pointer" }}
                   >
-                    {p.businessName}
-                  </h3>
-                  <span
-                    style={{
-                      display: "inline-block",
-                      fontSize: "12px",
-                      color: "#64748b",
-                      background: "#f1f5f9",
-                      borderRadius: "6px",
-                      padding: "2px 8px",
-                    }}
-                  >
-                    {p.industry || "No industry set"}
-                  </span>
-                </div>
+                    {labels[f]}
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
 
-                <div
-                  style={{
-                    display: "grid",
-                    gridTemplateColumns: "1fr 1fr",
-                    gap: "6px",
-                    fontSize: "13px",
-                    color: "#64748b",
-                  }}
-                >
-                  {p.city && <span>📍 {p.city}</span>}
-                  {p.phone && <span>📞 {p.phone}</span>}
-                  {p.services.length > 0 && (
-                    <span style={{ gridColumn: "span 2" }}>
-                      🛠 {p.services.slice(0, 3).join(", ")}
-                      {p.services.length > 3 && ` +${p.services.length - 3}`}
-                    </span>
+        {/* Profile list */}
+        <div style={{ flex: 1, overflowY: "auto" }}>
+          {/* Empty state — no profiles at all */}
+          {profiles.length === 0 && (
+            <div style={{ textAlign: "center", padding: "36px 16px" }}>
+              <div style={{ fontSize: "28px", marginBottom: "10px" }}>🏢</div>
+              <p style={{ fontSize: "13px", fontWeight: 600, color: "#0f172a", margin: "0 0 4px" }}>No profiles yet</p>
+              <p style={{ fontSize: "11px", color: "#94a3b8", margin: "0 0 14px" }}>Create your first profile.</p>
+              <button onClick={openCreate} style={{ padding: "7px 16px", borderRadius: "8px", background: "#0f172a", color: "#ffffff", border: "none", fontSize: "12px", fontWeight: 600, cursor: "pointer" }}>
+                Create First
+              </button>
+            </div>
+          )}
+
+          {/* No-results state — profiles exist but none match filters */}
+          {profiles.length > 0 && displayed.length === 0 && (
+            <div style={{ textAlign: "center", padding: "32px 16px" }}>
+              <div style={{ fontSize: "22px", marginBottom: "8px" }}>🔍</div>
+              <p style={{ fontSize: "13px", fontWeight: 600, color: "#0f172a", margin: "0 0 4px" }}>No profiles match</p>
+              <button
+                onClick={() => { setSearch(""); setActiveFilter("all"); }}
+                style={{ marginTop: "8px", padding: "6px 14px", borderRadius: "8px", border: "1.5px solid #e2e8f0", background: "#ffffff", color: "#0f172a", fontSize: "11px", fontWeight: 600, cursor: "pointer" }}
+              >
+                Clear filters
+              </button>
+            </div>
+          )}
+
+          {/* Profile rows */}
+          {displayed.map((p) => {
+            const isSelected = p.id === selectedProfileId;
+            const packColor = STYLE_PACKS.find((s) => s.id === p.preferredStylePack)?.color ?? "#0ea5e9";
+            const hasContent = !!p.generatedContent;
+            const isStaleRow = !!(p.updatedAt && p.generatedContent?.generatedAt && new Date(p.updatedAt) > new Date(p.generatedContent.generatedAt));
+            const linkedName = p.customer_id && customers ? (customers.find((c) => String(c.id) === p.customer_id)?.name ?? null) : null;
+            return (
+              <button
+                key={p.id}
+                onClick={() => setSelectedProfileId(isSelected ? null : p.id)}
+                style={{ display: "block", width: "100%", textAlign: "left", padding: "11px 14px", border: "none", borderBottom: "1px solid #f1f5f9", background: isSelected ? "#f8fafc" : "transparent", cursor: "pointer" }}
+              >
+                <div style={{ width: "100%", height: "2px", borderRadius: "1px", background: isSelected ? packColor : `${packColor}40`, marginBottom: "5px" }} />
+                <p style={{ margin: "0 0 2px", fontSize: "13px", fontWeight: 700, color: "#0f172a", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                  {p.businessName}
+                </p>
+                <p style={{ margin: "0 0 5px", fontSize: "11px", color: "#64748b" }}>
+                  {[p.industry, p.city].filter(Boolean).join(" · ") || "No details"}
+                </p>
+                <div style={{ display: "flex", gap: "4px", flexWrap: "wrap" }}>
+                  {hasContent && !isStaleRow && (
+                    <span style={{ fontSize: "10px", fontWeight: 600, color: "#15803d", background: "#dcfce7", borderRadius: "4px", padding: "1px 5px" }}>Generated</span>
+                  )}
+                  {isStaleRow && (
+                    <span style={{ fontSize: "10px", fontWeight: 600, color: "#92400e", background: "#fef3c7", borderRadius: "4px", padding: "1px 5px" }}>Stale</span>
+                  )}
+                  {linkedName && (
+                    <span style={{ fontSize: "10px", fontWeight: 600, color: "#7c3aed", background: "#f5f3ff", borderRadius: "4px", padding: "1px 5px" }}>{linkedName}</span>
+                  )}
+                  {p.customer_id && !linkedName && (
+                    <span style={{ fontSize: "10px", fontWeight: 600, color: "#7c3aed", background: "#f5f3ff", borderRadius: "4px", padding: "1px 5px" }}>Client</span>
                   )}
                 </div>
+              </button>
+            );
+          })}
+        </div>
+      </div>
 
-                {/* Style pack badge + content source badge */}
-                <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
-                  <span
-                    style={{
-                      fontSize: "11px",
-                      fontWeight: 600,
-                      color: packColor,
-                      background: `${packColor}15`,
-                      borderRadius: "6px",
-                      padding: "3px 9px",
-                      border: `1px solid ${packColor}30`,
-                    }}
-                  >
+      {/* ── RIGHT PANEL ── */}
+      <div className="bs-right-panel">
+        {!selectedProfile ? (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", height: "100%", padding: "48px 24px", textAlign: "center" }}>
+            <div style={{ fontSize: "36px", marginBottom: "12px", opacity: 0.4 }}>←</div>
+            <p style={{ fontSize: "15px", fontWeight: 600, color: "#0f172a", margin: "0 0 6px" }}>Select a profile</p>
+            <p style={{ fontSize: "13px", color: "#94a3b8", margin: 0 }}>Choose a profile from the list to view and manage it.</p>
+          </div>
+        ) : (
+          (() => {
+            const p = selectedProfile;
+            const packColor = STYLE_PACKS.find((s) => s.id === p.preferredStylePack)?.color ?? "#0ea5e9";
+            const linkedCustomerName = p.customer_id && customers
+              ? (customers.find((c) => String(c.id) === p.customer_id)?.name ?? null)
+              : null;
+            const isStale = !!(p.updatedAt && p.generatedContent?.generatedAt && new Date(p.updatedAt) > new Date(p.generatedContent.generatedAt));
+            const genSt   = genStatus[p.id] ?? "idle";
+            const genErr  = genError[p.id];
+            const hasContent = !!p.generatedContent;
+
+            let genLabel = hasContent ? "Regenerate Content" : "Generate Website Content";
+            let genBg    = "#ffffff";
+            let genCol   = "#374151";
+            let genBorder = "1px solid #e8edf2";
+            let genDisabled = false;
+            if (genSt === "generating") { genLabel = "Generating…"; genBg = "#f8fafc"; genCol = "#94a3b8"; genBorder = "1px solid #e8edf2"; genDisabled = true; }
+            else if (genSt === "success") { genLabel = hasContent ? "Regenerate Content" : "Generated!"; genBg = "#f0fdf4"; genCol = "#15803d"; genBorder = "1px solid #bbf7d0"; }
+            else if (genSt === "error")   { genLabel = "Try Again";   genBg = "#fff1f2"; genCol = "#e11d48"; genBorder = "1px solid #fecdd3"; }
+
+            return (
+              <div style={{ padding: "28px 28px 64px", maxWidth: "680px" }}>
+                {/* Color accent bar */}
+                <div style={{ height: "5px", borderRadius: "3px", background: `linear-gradient(90deg, ${packColor}, ${packColor}50)`, marginBottom: "20px" }} />
+
+                {/* Name + meta */}
+                <div style={{ marginBottom: "20px" }}>
+                  <h2 style={{ fontSize: "22px", fontWeight: 700, color: "#0f172a", margin: "0 0 8px" }}>{p.businessName}</h2>
+                  <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
+                    {p.industry && <span style={{ fontSize: "12px", color: "#64748b", background: "#f1f5f9", borderRadius: "6px", padding: "2px 9px" }}>{p.industry}</span>}
+                    {p.city    && <span style={{ fontSize: "12px", color: "#64748b" }}>📍 {p.city}</span>}
+                    {p.phone   && <span style={{ fontSize: "12px", color: "#64748b" }}>📞 {p.phone}</span>}
+                  </div>
+                </div>
+
+                {/* Services */}
+                {p.services.length > 0 && (
+                  <div style={{ marginBottom: "20px" }}>
+                    <p style={{ fontSize: "11px", fontWeight: 600, color: "#94a3b8", textTransform: "uppercase", letterSpacing: "0.05em", margin: "0 0 6px" }}>Services</p>
+                    <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                      {p.services.map((s) => <span key={s} style={{ fontSize: "12px", color: "#475569", background: "#f1f5f9", borderRadius: "6px", padding: "3px 9px" }}>{s}</span>)}
+                    </div>
+                  </div>
+                )}
+
+                {/* Badges */}
+                <div style={{ display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "24px" }}>
+                  <span style={{ fontSize: "11px", fontWeight: 600, color: packColor, background: `${packColor}15`, borderRadius: "6px", padding: "3px 9px", border: `1px solid ${packColor}30` }}>
                     {STYLE_PACKS.find((s) => s.id === p.preferredStylePack)?.label}
                   </span>
                   {p.desiredCustomModules.map((m) => (
-                    <span
-                      key={m}
-                      style={{
-                        fontSize: "11px",
-                        fontWeight: 500,
-                        color: "#475569",
-                        background: "#f1f5f9",
-                        borderRadius: "6px",
-                        padding: "3px 9px",
-                      }}
-                    >
+                    <span key={m} style={{ fontSize: "11px", color: "#475569", background: "#f1f5f9", borderRadius: "6px", padding: "3px 9px" }}>
                       {CUSTOM_MODULES.find((c) => c.id === m)?.label ?? m}
                     </span>
                   ))}
                   {p.generatedContent && (
-                    <span
-                      style={{
-                        fontSize: "11px",
-                        fontWeight: 600,
-                        color: p.generatedContent.source === "groq" ? "#0284c7" : "#64748b",
-                        background: p.generatedContent.source === "groq" ? "#e0f2fe" : "#f1f5f9",
-                        borderRadius: "6px",
-                        padding: "3px 9px",
-                        border: p.generatedContent.source === "groq" ? "1px solid #bae6fd" : "1px solid #e2e8f0",
-                      }}
-                    >
+                    <span style={{ fontSize: "11px", fontWeight: 600, color: p.generatedContent.source === "groq" ? "#0284c7" : "#64748b", background: p.generatedContent.source === "groq" ? "#e0f2fe" : "#f1f5f9", borderRadius: "6px", padding: "3px 9px", border: p.generatedContent.source === "groq" ? "1px solid #bae6fd" : "1px solid #e2e8f0" }}>
                       {p.generatedContent.source === "groq" ? "AI Content" : "Blueprint"}
                     </span>
                   )}
-                  {p.customer_id && (
-                    <button
-                      onClick={() => onNavigateToCustomer?.(p.customer_id!)}
-                      style={{
-                        fontSize: "11px",
-                        fontWeight: 600,
-                        color: "#7c3aed",
-                        background: "#f5f3ff",
-                        borderRadius: "6px",
-                        padding: "3px 9px",
-                        border: "1px solid #ddd6fe",
-                        cursor: "pointer",
-                      }}
-                    >
-                      Client ↗
-                    </button>
-                  )}
                 </div>
 
-                {/* Generate content button */}
-                {(() => {
-                  const status = genStatus[p.id] ?? "idle";
-                  const err    = genError[p.id];
-                  const hasContent = !!p.generatedContent;
-
-                  let label = hasContent ? "Regenerate Content" : "Generate Website Content";
-                  let bg    = "#f1f5f9";
-                  let color = "#0f172a";
-                  let disabled = false;
-
-                  if (status === "generating") {
-                    label = "Generating…";
-                    bg    = "#e2e8f0";
-                    color = "#64748b";
-                    disabled = true;
-                  } else if (status === "success") {
-                    label = hasContent ? "Regenerate Content" : "Generated!";
-                    bg    = "#dcfce7";
-                    color = "#15803d";
-                  } else if (status === "error") {
-                    label = "Try Again";
-                    bg    = "#fff1f2";
-                    color = "#e11d48";
-                  }
-
-                  return (
-                    <div>
-                      <button
-                        onClick={() => handleGenerate(p)}
-                        disabled={disabled}
-                        style={{
-                          width: "100%",
-                          padding: "8px 0",
-                          borderRadius: "10px",
-                          background: bg,
-                          color,
-                          border: "none",
-                          fontSize: "13px",
-                          fontWeight: 600,
-                          cursor: disabled ? "not-allowed" : "pointer",
-                          transition: "all 0.15s ease",
-                        }}
-                      >
-                        {label}
-                      </button>
-                      {status === "error" && err && (
-                        <p style={{ fontSize: "11px", color: "#e11d48", margin: "4px 0 0" }}>
-                          {err}
-                        </p>
-                      )}
-                    </div>
-                  );
-                })()}
-
-                {/* Generated content timestamp + clear */}
-                {p.generatedContent && (
-                  <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px" }}>
-                    <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
-                      <span style={{ fontSize: "11px", color: "#94a3b8" }}>
-                        Generated {new Date(p.generatedContent.generatedAt).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}
-                      </span>
-                      {isStale && (
-                        <span
-                          style={{
-                            fontSize: "11px",
-                            fontWeight: 500,
-                            color: "#92400e",
-                            background: "#fef3c7",
-                            borderRadius: "5px",
-                            padding: "1px 7px",
-                            border: "1px solid #fde68a",
-                          }}
-                        >
-                          Content may be outdated
-                        </span>
-                      )}
-                    </div>
-                    {clearConfirm[p.id] ? (
-                      <div style={{ display: "flex", gap: "6px" }}>
-                        <button
-                          onClick={() => handleClear(p)}
-                          style={{
-                            padding: "4px 10px",
-                            borderRadius: "8px",
-                            background: "#e11d48",
-                            color: "#ffffff",
-                            border: "none",
-                            fontSize: "11px",
-                            fontWeight: 700,
-                            cursor: "pointer",
-                          }}
-                        >
-                          Confirm clear
-                        </button>
-                        <button
-                          onClick={() => setClearConfirm((prev) => ({ ...prev, [p.id]: false }))}
-                          style={{
-                            padding: "4px 10px",
-                            borderRadius: "8px",
-                            background: "#f1f5f9",
-                            color: "#475569",
-                            border: "none",
-                            fontSize: "11px",
-                            fontWeight: 600,
-                            cursor: "pointer",
-                          }}
-                        >
-                          Cancel
-                        </button>
-                      </div>
-                    ) : (
-                      <button
-                        onClick={() => setClearConfirm((prev) => ({ ...prev, [p.id]: true }))}
-                        style={{
-                          padding: "4px 10px",
-                          borderRadius: "8px",
-                          background: "#f8fafc",
-                          color: "#94a3b8",
-                          border: "1px solid #e2e8f0",
-                          fontSize: "11px",
-                          fontWeight: 600,
-                          cursor: "pointer",
-                        }}
-                      >
-                        Reset to blueprint
-                      </button>
-                    )}
+                {/* Linked customer */}
+                {p.customer_id && (
+                  <div style={{ marginBottom: "20px", padding: "11px 14px 11px 16px", background: "#ffffff", borderRadius: "10px", border: "1px solid #e8edf2", borderLeft: "3px solid #7c3aed", display: "flex", alignItems: "center", justifyContent: "space-between", gap: "12px", flexWrap: "wrap" }}>
+                    <p style={{ fontSize: "13px", fontWeight: 500, color: "#374151", margin: 0 }}>
+                      {linkedCustomerName ? `Linked to ${linkedCustomerName}` : "Linked to a customer"}
+                    </p>
+                    <button
+                      onClick={() => onNavigateToCustomer?.(p.customer_id!)}
+                      style={{ padding: "6px 14px", borderRadius: "8px", background: "#f5f3ff", color: "#6d28d9", border: "1px solid #ddd6fe", fontSize: "13px", fontWeight: 600, cursor: "pointer", whiteSpace: "nowrap" }}
+                    >
+                      {linkedCustomerName ? `${linkedCustomerName} ↗` : "View Client ↗"}
+                    </button>
                   </div>
                 )}
 
-                {/* Actions */}
-                <div
-                  style={{
-                    display: "flex",
-                    gap: "8px",
-                    marginTop: "4px",
-                    flexWrap: "wrap",
-                  }}
-                >
+                {/* Primary actions */}
+                <div style={{ display: "flex", gap: "10px", marginBottom: "12px", flexWrap: "wrap" }}>
                   <a
                     href={`/website-preview/${p.id}`}
                     target="_blank"
                     rel="noreferrer"
-                    style={{
-                      flex: 1,
-                      padding: "9px 0",
-                      borderRadius: "10px",
-                      background: "#0f172a",
-                      color: "#ffffff",
-                      border: "none",
-                      fontSize: "13px",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                      textDecoration: "none",
-                      textAlign: "center",
-                    }}
+                    style={{ flex: 1, minWidth: "140px", padding: "11px 0", borderRadius: "10px", background: "#0f172a", color: "#ffffff", fontSize: "14px", fontWeight: 600, textDecoration: "none", textAlign: "center" }}
                   >
                     Open Preview ↗
                   </a>
                   <button
                     onClick={() => openEdit(p)}
-                    style={{
-                      padding: "9px 16px",
-                      borderRadius: "10px",
-                      background: "#f1f5f9",
-                      color: "#0f172a",
-                      border: "none",
-                      fontSize: "13px",
-                      fontWeight: 600,
-                      cursor: "pointer",
-                    }}
+                    style={{ flex: 1, minWidth: "110px", padding: "11px 16px", borderRadius: "10px", background: "#ffffff", color: "#374151", border: "1px solid #e8edf2", fontSize: "14px", fontWeight: 600, cursor: "pointer" }}
                   >
-                    Edit
+                    Edit Profile
                   </button>
+                </div>
+
+                {/* Generate content */}
+                <div style={{ marginBottom: "16px" }}>
+                  <button
+                    onClick={() => handleGenerate(p)}
+                    disabled={genDisabled}
+                    style={{ width: "100%", padding: "11px 0", borderRadius: "10px", background: genBg, color: genCol, border: genBorder, fontSize: "13px", fontWeight: 600, cursor: genDisabled ? "not-allowed" : "pointer", transition: "all 0.15s ease" }}
+                  >
+                    {genLabel}
+                  </button>
+                  {genSt === "error" && genErr && (
+                    <p style={{ fontSize: "11px", color: "#e11d48", margin: "4px 0 0" }}>{genErr}</p>
+                  )}
+                </div>
+
+                {/* Generated content timestamp + clear */}
+                {p.generatedContent && (
+                  <div style={{ padding: "10px 0", borderTop: "1px solid #f1f5f9", marginBottom: "20px" }}>
+                    <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: "8px", flexWrap: "wrap" }}>
+                      <div style={{ display: "flex", alignItems: "center", gap: "6px", flexWrap: "wrap" }}>
+                        <span style={{ fontSize: "11px", color: "#94a3b8" }}>
+                          Generated {new Date(p.generatedContent.generatedAt).toLocaleString("en-US", { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" })}
+                        </span>
+                        {isStale && (
+                          <span style={{ fontSize: "11px", fontWeight: 500, color: "#92400e", background: "#fef3c7", borderRadius: "5px", padding: "1px 7px", border: "1px solid #fde68a" }}>
+                            Content may be outdated
+                          </span>
+                        )}
+                      </div>
+                      {clearConfirm[p.id] ? (
+                        <div style={{ display: "flex", gap: "6px" }}>
+                          <button onClick={() => handleClear(p)} style={{ padding: "5px 12px", borderRadius: "8px", background: "#e11d48", color: "#ffffff", border: "none", fontSize: "11px", fontWeight: 700, cursor: "pointer" }}>
+                            Confirm clear
+                          </button>
+                          <button onClick={() => setClearConfirm((prev) => ({ ...prev, [p.id]: false }))} style={{ padding: "5px 12px", borderRadius: "8px", background: "#ffffff", color: "#64748b", border: "1px solid #e8edf2", fontSize: "11px", fontWeight: 600, cursor: "pointer" }}>
+                            Cancel
+                          </button>
+                        </div>
+                      ) : (
+                        <button onClick={() => setClearConfirm((prev) => ({ ...prev, [p.id]: true }))} style={{ padding: "5px 12px", borderRadius: "8px", background: "#ffffff", color: "#94a3b8", border: "1px solid #e8edf2", fontSize: "11px", fontWeight: 600, cursor: "pointer" }}>
+                          Reset to blueprint
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Delete */}
+                <div style={{ borderTop: "1px solid #f1f5f9", paddingTop: "20px" }}>
                   {deleteConfirm[p.id] ? (
-                    <>
-                      <button
-                        onClick={() => handleDelete(p.id)}
-                        style={{
-                          padding: "9px 12px",
-                          borderRadius: "10px",
-                          background: "#e11d48",
-                          color: "#ffffff",
-                          border: "none",
-                          fontSize: "12px",
-                          fontWeight: 700,
-                          cursor: "pointer",
-                        }}
-                      >
-                        Confirm
+                    <div style={{ display: "flex", gap: "8px" }}>
+                      <button onClick={() => handleDelete(p.id)} style={{ padding: "10px 20px", borderRadius: "10px", background: "#e11d48", color: "#ffffff", border: "none", fontSize: "13px", fontWeight: 700, cursor: "pointer" }}>
+                        Confirm delete
                       </button>
-                      <button
-                        onClick={() => setDeleteConfirm((prev) => ({ ...prev, [p.id]: false }))}
-                        style={{
-                          padding: "9px 10px",
-                          borderRadius: "10px",
-                          background: "#f1f5f9",
-                          color: "#475569",
-                          border: "none",
-                          fontSize: "12px",
-                          fontWeight: 600,
-                          cursor: "pointer",
-                        }}
-                      >
+                      <button onClick={() => setDeleteConfirm((prev) => ({ ...prev, [p.id]: false }))} style={{ padding: "10px 20px", borderRadius: "10px", background: "#ffffff", color: "#64748b", border: "1px solid #e8edf2", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}>
                         Cancel
                       </button>
-                    </>
+                    </div>
                   ) : (
-                    <button
-                      onClick={() => setDeleteConfirm((prev) => ({ ...prev, [p.id]: true }))}
-                      style={{
-                        padding: "9px 14px",
-                        borderRadius: "10px",
-                        background: "#fff1f2",
-                        color: "#e11d48",
-                        border: "none",
-                        fontSize: "13px",
-                        fontWeight: 600,
-                        cursor: "pointer",
-                      }}
-                    >
-                      ✕
+                    <button onClick={() => setDeleteConfirm((prev) => ({ ...prev, [p.id]: true }))} style={{ padding: "10px 20px", borderRadius: "10px", background: "#ffffff", color: "#e11d48", border: "1px solid #fecdd3", fontSize: "13px", fontWeight: 600, cursor: "pointer" }}>
+                      Delete Profile
                     </button>
                   )}
                 </div>
               </div>
             );
-          })}
-        </div>
-      )}
-    </div>
+          })()
+        )}
+      </div>
     </div>
   );
 }
