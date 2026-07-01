@@ -174,6 +174,8 @@ export default function BusinessSection({ onNavigate, onNavigateToCustomer, cust
   const [activeFilter,      setActiveFilter]      = useState<"all" | "has-client" | "no-client" | "generated" | "stale">("all");
   const [sort,              setSort]              = useState<"newest" | "updated" | "name" | "industry">("newest");
   const [selectedProfileId, setSelectedProfileId] = useState<string | null>(null);
+  // true only when editor was launched from a Customer context (create draft or customer Edit button)
+  const [editFromCustomer, setEditFromCustomer] = useState(false);
 
   const load = useCallback(async () => {
     const profiles = await getAllProfiles();
@@ -190,6 +192,7 @@ export default function BusinessSection({ onNavigate, onNavigateToCustomer, cust
       if (draft) {
         setPrefillData(draft);
         setEditing(null);
+        setEditFromCustomer(!!draft.customer_id); // true only when launched from a customer
         setView("create");
         return;
       }
@@ -207,6 +210,7 @@ export default function BusinessSection({ onNavigate, onNavigateToCustomer, cust
           if (target) {
             setEditing(target);
             setEditDraftForm(editDraft?.id === pendingId ? editDraft : null);
+            setEditFromCustomer(true); // always customer-context when arriving via pending-edit
             setView("edit");
           }
         })();
@@ -234,27 +238,33 @@ export default function BusinessSection({ onNavigate, onNavigateToCustomer, cust
   function openCreate() {
     setEditing(null);
     setPrefillData(null);
+    setEditFromCustomer(false);
     setView("create");
   }
 
   function openEdit(p: BusinessProfile) {
     setEditing(p);
     setEditDraftForm(null);
+    setEditFromCustomer(false); // list/detail context — stay in Website Profiles on save
     setView("edit");
   }
 
   function handleSaved() {
     consumeWebsiteProfileDraft();
     consumeWebsiteProfileEditDraft();
-    const returnCustomerId =
-      (!editing && prefillData?.customer_id)
-        ? prefillData.customer_id
-        : (editing?.customer_id ?? null);
+    // Only return to a customer when the editor was explicitly launched from a Customer context.
+    // Edits opened from the Website Profiles list/detail panel stay in Website Profiles.
+    const returnCustomerId = editFromCustomer
+      ? ((!editing && prefillData?.customer_id)
+          ? prefillData.customer_id
+          : (editing?.customer_id ?? null))
+      : null;
     load();
     setView("list");
     setEditing(null);
     setPrefillData(null);
     setEditDraftForm(null);
+    setEditFromCustomer(false);
     if (returnCustomerId) {
       if (onNavigateToCustomer) {
         onNavigateToCustomer(returnCustomerId);
