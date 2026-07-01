@@ -1,10 +1,11 @@
 import type { BusinessProfile } from "./types";
 import { getBlueprint } from "./blueprints/index";
 
-const DRAFT_KEY  = "wp_draft";
-const EDIT_KEY   = "wp_pending_edit";
-const NAV_KEY    = "wp_nav_to";
-const TTL_MS     = 10 * 60 * 1000; // 10 minutes
+const DRAFT_KEY      = "wp_draft";
+const EDIT_KEY       = "wp_pending_edit";
+const EDIT_DRAFT_KEY = "wp_edit_draft";
+const NAV_KEY        = "wp_nav_to";
+const TTL_MS         = 10 * 60 * 1000; // 10 minutes
 
 interface Timed<T> {
   data: T;
@@ -73,6 +74,20 @@ export function createWebsiteProfilePendingEdit(profileId: string): void {
 
 export function consumeWebsiteProfilePendingEdit(): string | null {
   return consume<string>(EDIT_KEY);
+}
+
+// ── Existing profile edit draft (persist in-progress edits across reload) ──
+
+export function createWebsiteProfileEditDraft(profileId: string, form: Partial<BusinessProfile>): void {
+  store(EDIT_DRAFT_KEY, { ...form, id: profileId });
+}
+
+export function peekWebsiteProfileEditDraft(): (Partial<BusinessProfile> & { id: string }) | null {
+  return peek<Partial<BusinessProfile> & { id: string }>(EDIT_DRAFT_KEY);
+}
+
+export function consumeWebsiteProfileEditDraft(): void {
+  consume(EDIT_DRAFT_KEY);
 }
 
 // ── Nav target (used by preview page to land on a specific section) ──

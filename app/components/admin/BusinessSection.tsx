@@ -17,6 +17,9 @@ import {
   consumeWebsiteProfileDraft,
   consumeWebsiteProfilePendingEdit,
   createWebsiteProfileDraft,
+  createWebsiteProfileEditDraft,
+  peekWebsiteProfileEditDraft,
+  consumeWebsiteProfileEditDraft,
 } from "@/lib/business/draftProfile";
 
 // ── Constants ────────────────────────────────────────────────────
@@ -142,6 +145,7 @@ export default function BusinessSection({ onNavigate, onNavigateToCustomer }: { 
   const [profiles, setProfiles] = useState<BusinessProfile[]>([]);
   const [editing, setEditing]   = useState<BusinessProfile | null>(null);
   const [prefillData, setPrefillData] = useState<Partial<BusinessProfile> | null>(null);
+  const [editDraftForm, setEditDraftForm] = useState<Partial<BusinessProfile> | null>(null);
   const [genStatus,      setGenStatus]      = useState<Record<string, GenStatus>>({});
   const [genError,       setGenError]       = useState<Record<string, string>>({});
   const [deleteConfirm,  setDeleteConfirm]  = useState<Record<string, boolean>>({});
@@ -156,9 +160,8 @@ export default function BusinessSection({ onNavigate, onNavigateToCustomer }: { 
     void (async () => {
       await migrateLocalStorageProfiles();
       void load();
-      // Peek at the pending draft (from Customer panel or Copy Kit) without consuming it.
-      // The draft stays in sessionStorage so navigating away and back re-opens the editor.
-      // It is consumed (deleted) only on explicit save or cancel.
+
+      // A. New-profile creation draft — highest priority, unchanged behavior.
       const draft = peekWebsiteProfileDraft();
       if (draft) {
         setPrefillData(draft);
@@ -166,15 +169,38 @@ export default function BusinessSection({ onNavigate, onNavigateToCustomer }: { 
         setView("create");
         return;
       }
-      // Consume a pending edit (from preview page or Customer Edit button)
+
+      // B. One-shot pending-edit signal (from Customer detail "Edit" button or preview page).
       const pendingId = consumeWebsiteProfilePendingEdit();
       if (pendingId) {
+        const editDraft = peekWebsiteProfileEditDraft();
+        if (editDraft && editDraft.id !== pendingId) {
+          consumeWebsiteProfileEditDraft();
+        }
         (async () => {
           const profiles = await getAllProfiles();
           const target = profiles.find((p) => p.id === pendingId);
           if (target) {
             setEditing(target);
+            setEditDraftForm(editDraft?.id === pendingId ? editDraft : null);
             setView("edit");
+          }
+        })();
+        return;
+      }
+
+      // C. Reload recovery — reopen in-progress edit from sessionStorage draft.
+      const editDraft = peekWebsiteProfileEditDraft();
+      if (editDraft) {
+        (async () => {
+          const profiles = await getAllProfiles();
+          const target = profiles.find((p) => p.id === editDraft.id);
+          if (target) {
+            setEditing(target);
+            setEditDraftForm(editDraft);
+            setView("edit");
+          } else {
+            consumeWebsiteProfileEditDraft();
           }
         })();
       }
@@ -189,11 +215,13 @@ export default function BusinessSection({ onNavigate, onNavigateToCustomer }: { 
 
   function openEdit(p: BusinessProfile) {
     setEditing(p);
+    setEditDraftForm(null);
     setView("edit");
   }
 
   function handleSaved() {
     consumeWebsiteProfileDraft();
+    consumeWebsiteProfileEditDraft();
     const returnCustomerId =
       (!editing && prefillData?.customer_id)
         ? prefillData.customer_id
@@ -202,6 +230,7 @@ export default function BusinessSection({ onNavigate, onNavigateToCustomer }: { 
     setView("list");
     setEditing(null);
     setPrefillData(null);
+    setEditDraftForm(null);
     if (returnCustomerId) {
       if (onNavigateToCustomer) {
         onNavigateToCustomer(returnCustomerId);
@@ -262,8 +291,22 @@ export default function BusinessSection({ onNavigate, onNavigateToCustomer }: { 
         existing={editing}
         prefill={prefillData ?? undefined}
         onSaved={handleSaved}
-        onCancel={() => { consumeWebsiteProfileDraft(); setView("list"); setEditing(null); setPrefillData(null); }}
-        onFormChange={prefillData !== null ? (f) => createWebsiteProfileDraft(f) : undefined}
+        onCancel={() => {
+          consumeWebsiteProfileDraft();
+          consumeWebsiteProfileEditDraft();
+          setView("list");
+          setEditing(null);
+          setPrefillData(null);
+          setEditDraftForm(null);
+        }}
+        onFormChange={
+          editing
+            ? (f) => createWebsiteProfileEditDraft(editing.id, f)
+            : prefillData !== null
+            ? (f) => createWebsiteProfileDraft(f)
+            : undefined
+        }
+        editDraftForm={editDraftForm}
       />
     );
   }
@@ -761,13 +804,14 @@ interface EditorProps {
   onSaved: () => void;
   onCancel: () => void;
   onFormChange?: (form: Partial<BusinessProfile>) => void;
+  editDraftForm?: Partial<BusinessProfile> | null;
 }
 
-function BusinessEditor({ existing, prefill, onSaved, onCancel, onFormChange }: EditorProps) {
+function BusinessEditor({ existing, prefill, onSaved, onCancel, onFormChange, editDraftForm }: EditorProps) {
   const isNew = !existing;
   const [form, setForm] = useState<Omit<BusinessProfile, "id" | "createdAt" | "updatedAt">>(() => {
     if (existing) {
-      return {
+      const base = {
         customer_id: existing.customer_id,
         businessName: existing.businessName,
         industry: existing.industry,
@@ -784,6 +828,12 @@ function BusinessEditor({ existing, prefill, onSaved, onCancel, onFormChange }: 
         websiteGoals: existing.websiteGoals,
         quoteFormNeeds: existing.quoteFormNeeds,
       };
+      if (editDraftForm) {
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const { id: _i, createdAt: _ca, updatedAt: _ua, generatedContent: _gc, ...safe } = editDraftForm;
+        return { ...base, ...safe };
+      }
+      return base;
     }
     if (prefill) {
       // eslint-disable-next-line @typescript-eslint/no-unused-vars
