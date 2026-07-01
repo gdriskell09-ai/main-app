@@ -779,63 +779,63 @@ function BusinessEditor({ existing, prefill, onSaved, onCancel, onFormChange, ed
   }
 
   return (
-    <div className="w-full h-full overflow-y-auto">
-    <div style={{ padding: "32px 16px 80px", maxWidth: "680px" }}>
+    <form className="w-full h-full flex flex-col" onSubmit={handleSubmit}>
       <style>{`
         @media (max-width: 540px) {
           .bs-two-col { grid-template-columns: 1fr !important; }
         }
       `}</style>
-      {/* Header */}
-      <div style={{ marginBottom: "28px" }}>
-        <button
-          onClick={onCancel}
-          style={{
-            background: "none",
-            border: "none",
-            color: "#64748b",
-            fontSize: "14px",
-            cursor: "pointer",
-            padding: "0",
-            marginBottom: "12px",
-            display: "flex",
-            alignItems: "center",
-            gap: "6px",
-          }}
-        >
-          ← Back to list
-        </button>
-        <h2
-          style={{
-            fontSize: "22px",
-            fontWeight: 700,
-            color: "#0f172a",
-            margin: 0,
-          }}
-        >
-          {isNew ? "New Business Profile" : `Edit — ${existing!.businessName}`}
-        </h2>
-      </div>
-
-      {errors.length > 0 && (
-        <div
-          style={{
-            background: "#fff1f2",
-            border: "1px solid #fecdd3",
-            borderRadius: "12px",
-            padding: "14px 18px",
-            marginBottom: "20px",
-            fontSize: "14px",
-            color: "#be123c",
-          }}
-        >
-          {errors.map((e) => (
-            <div key={e}>⚠ {e}</div>
-          ))}
+      <div style={{ flex: 1, overflowY: "auto" }}>
+      <div style={{ padding: "32px 16px 24px", maxWidth: "680px" }}>
+        {/* Header */}
+        <div style={{ marginBottom: "28px" }}>
+          <button
+            type="button"
+            onClick={onCancel}
+            style={{
+              background: "none",
+              border: "none",
+              color: "#64748b",
+              fontSize: "14px",
+              cursor: "pointer",
+              padding: "0",
+              marginBottom: "12px",
+              display: "flex",
+              alignItems: "center",
+              gap: "6px",
+            }}
+          >
+            ← Back to list
+          </button>
+          <h2
+            style={{
+              fontSize: "22px",
+              fontWeight: 700,
+              color: "#0f172a",
+              margin: 0,
+            }}
+          >
+            {isNew ? "New Business Profile" : `Edit — ${existing!.businessName}`}
+          </h2>
         </div>
-      )}
 
-      <form onSubmit={handleSubmit}>
+        {errors.length > 0 && (
+          <div
+            style={{
+              background: "#fff1f2",
+              border: "1px solid #fecdd3",
+              borderRadius: "12px",
+              padding: "14px 18px",
+              marginBottom: "20px",
+              fontSize: "14px",
+              color: "#be123c",
+            }}
+          >
+            {errors.map((e) => (
+              <div key={e}>⚠ {e}</div>
+            ))}
+          </div>
+        )}
         {/* ── Business basics ────────────────────────────── */}
         <div
           style={{
@@ -1237,43 +1237,54 @@ function BusinessEditor({ existing, prefill, onSaved, onCancel, onFormChange, ed
           </Field>
         </div>
 
-        {/* ── Actions ───────────────────────────────────── */}
-        <div style={{ display: "flex", gap: "12px" }}>
-          <button
-            type="submit"
-            style={{
-              flex: 1,
-              padding: "13px 0",
-              borderRadius: "14px",
-              background: "#0f172a",
-              color: "#ffffff",
-              border: "none",
-              fontSize: "15px",
-              fontWeight: 700,
-              cursor: "pointer",
-            }}
-          >
-            {isNew ? "Create Business Profile" : "Save Changes"}
-          </button>
-          <button
-            type="button"
-            onClick={onCancel}
-            style={{
-              padding: "13px 24px",
-              borderRadius: "14px",
-              background: "#f1f5f9",
-              color: "#0f172a",
-              border: "none",
-              fontSize: "15px",
-              fontWeight: 600,
-              cursor: "pointer",
-            }}
-          >
-            Cancel
-          </button>
-        </div>
-      </form>
-    </div>
-    </div>
+      </div>
+      </div>
+
+      {/* ── Sticky footer action bar ── */}
+      <div
+        style={{
+          flexShrink: 0,
+          borderTop: "1px solid #e8edf2",
+          background: "#ffffff",
+          padding: "14px 20px",
+          display: "flex",
+          gap: "12px",
+        }}
+      >
+        <button
+          type="submit"
+          style={{
+            flex: 1,
+            maxWidth: "320px",
+            padding: "13px 0",
+            borderRadius: "14px",
+            background: "#0f172a",
+            color: "#ffffff",
+            border: "none",
+            fontSize: "15px",
+            fontWeight: 700,
+            cursor: "pointer",
+          }}
+        >
+          {isNew ? "Create Business Profile" : "Save Changes"}
+        </button>
+        <button
+          type="button"
+          onClick={onCancel}
+          style={{
+            padding: "13px 24px",
+            borderRadius: "14px",
+            background: "#ffffff",
+            color: "#374151",
+            border: "1px solid #e8edf2",
+            fontSize: "15px",
+            fontWeight: 600,
+            cursor: "pointer",
+          }}
+        >
+          Cancel
+        </button>
+      </div>
+    </form>
   );
 }
