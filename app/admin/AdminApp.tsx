@@ -317,12 +317,12 @@ function DashboardSection({
 
 function LeadDetail({
   lead, notes, saving, hasCustomer,
-  onClose, onStatusChange, onNotesChange, onNotesSave, onDelete, onCreateCustomer,
+  onClose, onStatusChange, onNotesChange, onNotesSave, onDelete, onCreateCustomer, onViewCustomer,
 }: {
   lead: Lead; notes: string; saving: boolean; hasCustomer: boolean;
   onClose: () => void; onStatusChange: (s: LeadStatus) => void;
   onNotesChange: (v: string) => void; onNotesSave: () => void;
-  onDelete: () => void; onCreateCustomer: () => void;
+  onDelete: () => void; onCreateCustomer: () => void; onViewCustomer?: () => void;
 }) {
   const [confirmDelete, setConfirmDelete] = useState(false);
 
@@ -351,7 +351,15 @@ function LeadDetail({
       {lead.status === "converted" && (
         <div className="mt-4 rounded-[1.5rem] border border-amber-200 bg-amber-50 px-4 py-3">
           {hasCustomer ? (
-            <p className="text-sm font-medium text-amber-800">✓ Customer record exists for this lead.</p>
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-medium text-amber-800">✓ Customer record exists for this lead.</p>
+              {onViewCustomer && (
+                <button onClick={onViewCustomer}
+                  className="shrink-0 rounded-full bg-amber-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-amber-700">
+                  View customer ↗
+                </button>
+              )}
+            </div>
           ) : (
             <div className="flex items-center justify-between gap-3">
               <p className="text-sm text-amber-800">Converted — create a customer record to track jobs and quotes.</p>
@@ -415,7 +423,7 @@ function LeadDetail({
 
 function LeadsSection({
   leads, loading, customers, onUpdateStatus, onSaveNotes, onDelete, onCreateCustomer,
-  selectedLeadId, onSelectLead,
+  selectedLeadId, onSelectLead, onNavigateToCustomer,
 }: {
   leads: Lead[]; loading: boolean; customers: Customer[];
   onUpdateStatus: (id: number, status: LeadStatus) => void;
@@ -424,6 +432,7 @@ function LeadsSection({
   onCreateCustomer: (lead: Lead) => Promise<void>;
   selectedLeadId: number | null;
   onSelectLead: (id: number | null) => void;
+  onNavigateToCustomer?: (id: string) => void;
 }) {
   const [filter, setFilter] = useState<LeadStatus | "all">("all");
   const [search, setSearch] = useState("");
@@ -433,6 +442,7 @@ function LeadsSection({
   const selected = leads.find((l) => l.id === selectedLeadId) ?? null;
 
   const leadIdSet = new Set(customers.map((c) => c.lead_id).filter(Boolean));
+  const linkedCustomer = selected ? (customers.find((c) => c.lead_id === selected.id) ?? null) : null;
 
   function openLead(lead: Lead) { onSelectLead(lead.id); }
 
@@ -477,6 +487,9 @@ function LeadsSection({
     onNotesSave: handleSaveNotes,
     onDelete: () => { onDelete(selected.id); onSelectLead(null); },
     onCreateCustomer: handleCreateCustomer,
+    onViewCustomer: linkedCustomer && onNavigateToCustomer
+      ? () => onNavigateToCustomer(String(linkedCustomer.id))
+      : undefined,
   } : null;
 
   return (
@@ -565,7 +578,7 @@ function LeadsSection({
 function CustomerDetail({
   customer, jobs, quotes, invoices, leads, onNavigate,
   onClose, onUpdateNotes, onAddJob, onUpdateJobStatus, onAddQuote, onUpdateQuoteStatus,
-  onAddInvoice, onUpdateInvoiceStatus, onConvertQuoteToInvoice, onDeleteCustomer,
+  onAddInvoice, onUpdateInvoiceStatus, onConvertQuoteToInvoice, onDeleteCustomer, onNavigateToLead,
 }: {
   customer: Customer; jobs: Job[]; quotes: Quote[]; invoices: Invoice[]; leads: Lead[];
   onClose: () => void;
@@ -579,6 +592,7 @@ function CustomerDetail({
   onUpdateInvoiceStatus: (id: string, status: InvoiceStatus) => void;
   onConvertQuoteToInvoice: (quote: Quote) => Promise<void>;
   onDeleteCustomer: (id: string) => void;
+  onNavigateToLead?: (id: number) => void;
 }) {
   const [notes, setNotes]               = useState(customer.notes ?? "");
   const [saving, setSaving]             = useState(false);
@@ -756,6 +770,16 @@ function CustomerDetail({
         {bizType           && <span className="rounded-full bg-slate-100 px-3 py-1 text-xs font-medium text-slate-600">{bizType}</span>}
         {linkedLead?.need  && <span className="rounded-full bg-emerald-50 px-3 py-1 text-xs font-medium text-emerald-700">{linkedLead.need}</span>}
       </div>
+
+      {/* Source lead link */}
+      {linkedLead && onNavigateToLead && (
+        <div className="mt-2">
+          <button onClick={() => onNavigateToLead(linkedLead.id)}
+            className="rounded-full border border-black/10 px-3 py-1 text-xs font-medium text-slate-500 transition hover:border-slate-400 hover:text-slate-950">
+            Source lead: {linkedLead.name} ↗
+          </button>
+        </div>
+      )}
 
       {/* Contact info */}
       <div className="mt-4 grid gap-3 rounded-[1.5rem] border border-black/5 bg-[#f7f5ef] p-5 text-sm sm:grid-cols-2">
@@ -1109,7 +1133,7 @@ function CustomersSection({
   customers, jobs, quotes, invoices, leads, loading,
   onUpdateNotes, onAddJob, onUpdateJobStatus, onAddQuote, onUpdateQuoteStatus,
   onAddInvoice, onUpdateInvoiceStatus, onConvertQuoteToInvoice, onDeleteCustomer,
-  onAddDirectCustomer, onNavigate, selectedCustomerId, onSelectCustomer,
+  onAddDirectCustomer, onNavigate, selectedCustomerId, onSelectCustomer, onNavigateToLead,
 }: {
   customers: Customer[]; jobs: Job[]; quotes: Quote[]; invoices: Invoice[]; leads: Lead[]; loading: boolean;
   onUpdateNotes: (id: string, notes: string) => Promise<void>;
@@ -1125,6 +1149,7 @@ function CustomersSection({
   onNavigate: (s: Section) => void;
   selectedCustomerId: string | null;
   onSelectCustomer: (id: string | null) => void;
+  onNavigateToLead?: (id: number) => void;
 }) {
   const [search, setSearch] = useState("");
   const selected = customers.find((c) => String(c.id) === String(selectedCustomerId ?? "")) ?? null;
@@ -1161,6 +1186,7 @@ function CustomersSection({
     onUpdateNotes, onAddJob, onUpdateJobStatus, onAddQuote, onUpdateQuoteStatus,
     onAddInvoice, onUpdateInvoiceStatus, onConvertQuoteToInvoice,
     onDeleteCustomer: (id: string) => { onDeleteCustomer(id); onSelectCustomer(null); },
+    onNavigateToLead,
   } : null;
 
   return (
@@ -2201,6 +2227,7 @@ export default function AdminApp() {
               onUpdateStatus={handleUpdateStatus} onSaveNotes={handleSaveNotes}
               onDelete={handleDeleteLead} onCreateCustomer={handleCreateCustomer}
               selectedLeadId={selectedLeadId} onSelectLead={setSelectedLeadId}
+              onNavigateToCustomer={(id) => { setSelectedCustomerId(id); setSection("customers"); }}
             />
           )}
           {section === "customers" && (
@@ -2215,6 +2242,7 @@ export default function AdminApp() {
               onAddDirectCustomer={handleAddDirectCustomer}
               onNavigate={nav}
               selectedCustomerId={selectedCustomerId} onSelectCustomer={setSelectedCustomerId}
+              onNavigateToLead={(id) => { setSelectedLeadId(id); setSection("leads"); }}
             />
           )}
           {section === "invoices" && (
