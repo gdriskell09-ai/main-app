@@ -255,6 +255,20 @@ The live Supabase project was missing the `business_profiles` table, causing 404
 
 *Fixed separately (see UX Cleanup section below): admin section persistence on hard refresh; generated content timestamp date+time; customer draft persistence; customer return navigation.*
 
+### Lead ↔ Customer Navigation Cleanup (complete, 2026-06-30)
+
+Commits `af46b6f`, `cb306b4`, and `34b55b0`. Only file changed across all three: `app/admin/AdminApp.tsx`. Build: 22/22 routes, 0 TypeScript errors before each commit. No schema, RLS, service role, share tokens, preview refactor, or new dependencies.
+
+- **`af46b6f` — Lead ↔ Customer bidirectional navigation:** Wired `View customer ↗` in `LeadDetail` (navigates to the linked customer using `customers.lead_id === lead.id`). Wired `Source lead: [name] ↗` in `CustomerDetail` (navigates back to the originating lead using `customer.lead_id`). Both are prop-callback driven; no new DB columns.
+- **`cb306b4` — Persist lead context + clarify linked records:** `selectedLeadId` now persists in `sessionStorage["admin_selected_lead"]` — same lazy-initializer + write-on-change pattern as `selectedCustomerId`. Lead detail panel stays open after hard refresh. Added `Lead #[id]` label to `LeadDetail` header. Added `Customer #[id]` label to `CustomerDetail` header. Lead list rows now show a green `Customer ✓` chip when a linked customer exists (`leadIdSet.has(lead.id)`). `View customer ↗` banner changed from amber to emerald and is now shown whenever a customer is linked, not only when `status === "converted"`.
+- **`34b55b0` — Remove "Create customer" from Lead UI:** Removed the amber "Converted — create a customer record" banner and "Create customer" button from `LeadDetail` per user preference. The underlying `handleCreateCustomer` function and `onCreateCustomer` prop remain in the code but are no longer surfaced in the UI. Creating customers from the Customers section is the sole entry point.
+
+**Navigation triangle now fully wired (no new DB columns required):**
+- Lead → Customer: `View customer ↗` (green banner, always shown when linked)
+- Customer → Lead: `Source lead: [name] ↗` button
+- Customer → Website Profile: existing Create / Edit / Preview buttons
+- Website Profile → Customer: existing `Client ↗` badge
+
 ### Phase 3.7 — UX Cleanup Fixes (2026-06-30)
 
 Commits `68b0446`, `e0df637`, `a9c143e`, `54b47bb`, `4e6ea8a`, `62e855d`, and `d2ec080`. Build: 22/22 routes, 0 TypeScript errors before each commit. No schema, RLS, service role, share tokens, preview refactor, or new dependencies.
@@ -952,4 +966,4 @@ Every step requires explicit owner approval before anything is published, listed
 
 ---
 
-*Last updated: Phase 3.7 UX cleanup complete (2026-06-30). Latest pushed commit: `d2ec080` (existing Website Profile edit draft persistence). Full commit series: `68b0446` (admin section persistence + timestamp), `e0df637` (customer draft persistence + return navigation), `a9c143e` (typed draft field persistence), `54b47bb` (customer-side linked Website Profile display fix), `4e6ea8a` (customer context persistence + Client ↗ + post-save return), `62e855d` (selected customer lookup normalization), `d2ec080` (edit draft persistence via `wp_edit_draft`). RLS/owner_id enforcement remains a separate future security slice. Next recommended code slice: Lead ↔ Customer navigation linking (`AdminApp.tsx` only). Following slice: Save/Submit validation warnings (Business Profile editor first).*
+*Last updated: Lead ↔ Customer navigation cleanup complete (2026-06-30). Latest pushed commit: `34b55b0` (remove Create customer from Lead UI). Full Lead ↔ Customer commit series: `af46b6f` (bidirectional nav wiring), `cb306b4` (persist lead context, IDs, Customer ✓ badge, always-visible View customer), `34b55b0` (remove Create customer from Lead UI). RLS/owner_id enforcement remains a separate future security slice. Next recommended code slice: Website Profiles organization/search UX. Following slices: admin date/time seconds formatting, phone validation/formatting, Save/Submit validation UX.*

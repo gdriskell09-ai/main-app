@@ -1,5 +1,30 @@
 # Decision Log
 
+## 2026-06-30: Lead ↔ Customer Navigation Cleanup
+
+Commits `af46b6f`, `cb306b4`, `34b55b0`. Only file changed: `app/admin/AdminApp.tsx`. Build: 22/22 routes, 0 TypeScript errors before each commit. No schema, RLS, service role, share tokens, preview refactor, or new dependencies.
+
+### `af46b6f` — Bidirectional Lead ↔ Customer navigation
+
+Used existing `customers.lead_id` foreign key and `leads.id` to wire two-way navigation:
+
+- **`View customer ↗` in `LeadDetail`:** `LeadsSection` already computed `leadIdSet` and `linkedCustomer`; wired `onViewCustomer` callback to `() => onNavigateToCustomer(String(linkedCustomer.id))`. `AdminApp` passes `(id) => { setSelectedCustomerId(id); setSection("customers"); }`.
+- **`Source lead: [name] ↗` in `CustomerDetail`:** reads `customer.lead_id`, looks up `leads.find((l) => l.id === customer.lead_id)`, renders a button that calls `onNavigateToLead(linkedLead.id)`. `AdminApp` passes `(id) => { setSelectedLeadId(id); setSection("leads"); }`.
+- No new DB columns. `customers.lead_id` was already populated by `handleCreateCustomer`.
+
+### `cb306b4` — Persist lead context + clarify linked records
+
+- **`selectedLeadId` sessionStorage persistence:** `useState` lazy initializer reads `sessionStorage["admin_selected_lead"]`; a `useEffect` writes `String(selectedLeadId)` on every change and removes the key when null. Identical pattern to `selectedCustomerId` / `admin_selected_customer`. Lead detail panel now survives hard refresh.
+- **`Lead #[id]` / `Customer #[id]` labels:** added as `<p className="text-xs text-slate-400">` below the name/business in each detail header. Helps admin correlate UI records to Supabase rows.
+- **`Customer ✓` chip on lead list rows:** `leadIdSet.has(lead.id)` renders a small green badge in the tags row. Converts lead list into a visual CRM — no click, display only.
+- **`View customer ↗` always visible when linked:** changed condition from `lead.status === "converted"` to `hasCustomer`. A lead with a linked customer shows the green "✓ Customer record linked." banner regardless of its current status. The amber "Converted — create a customer record" banner is still gated on `status === "converted" && !hasCustomer`.
+
+### `34b55b0` — Remove "Create customer" from Lead UI
+
+- Removed the `{!hasCustomer && lead.status === "converted" && ...}` amber banner and "Create customer" button from `LeadDetail`.
+
+Key decision: **single entry point for customer creation.** Creating customers directly from a Lead detail created a secondary, less-discoverable flow alongside the Customers section's `+ New` form. Removing it simplifies the Lead panel to a read/navigate surface. The `handleCreateCustomer` function and `onCreateCustomer` prop are retained in code but not rendered; no DB logic was changed.
+
 ## 2026-06-30: Phase 3.7 UX Cleanup — Customer Context Persistence, Lookup Normalization, Existing Profile Edit Draft
 
 Commits `4e6ea8a`, `62e855d`, and `d2ec080`. Build: 22/22 routes, 0 TypeScript errors before each commit. No schema, RLS, service role, share tokens, preview refactor, or new dependencies in any commit. Browser QA not yet confirmed by Grant.
