@@ -369,7 +369,7 @@ function LeadDetail({
         </div>
       </div>
 
-      {hasCustomer && (
+      {hasCustomer ? (
         <div className="mt-4 rounded-[1.5rem] border border-emerald-200 bg-emerald-50 px-4 py-3">
           <div className="flex items-center justify-between gap-3">
             <p className="text-sm font-medium text-emerald-800">✓ Customer record linked.</p>
@@ -379,6 +379,16 @@ function LeadDetail({
                 View customer ↗
               </button>
             )}
+          </div>
+        </div>
+      ) : (
+        <div className="mt-4 rounded-[1.5rem] border border-black/5 bg-[#f7f5ef] px-4 py-3">
+          <div className="flex items-center justify-between gap-3">
+            <p className="text-sm text-slate-600">No customer record yet.</p>
+            <button onClick={onCreateCustomer}
+              className="shrink-0 rounded-full bg-slate-950 px-4 py-2 text-xs font-bold text-white transition hover:bg-slate-800">
+              Create customer from lead
+            </button>
           </div>
         </div>
       )}

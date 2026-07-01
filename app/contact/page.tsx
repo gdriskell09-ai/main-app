@@ -53,6 +53,13 @@ const needs = [
 
 type FormState = "idle" | "submitting" | "success" | "error";
 
+function formatPhoneInput(value: string): string {
+  const d = value.replace(/\D/g, "").slice(0, 10);
+  if (d.length <= 3) return d;
+  if (d.length <= 6) return `(${d.slice(0, 3)}) ${d.slice(3)}`;
+  return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+}
+
 function ContactForm() {
   const [form, setForm] = useState({
     name: "",
@@ -275,7 +282,7 @@ function ContactForm() {
                       name="phone"
                       type="tel"
                       value={form.phone}
-                      onChange={handleChange}
+                      onChange={(e) => setForm((prev) => ({ ...prev, phone: formatPhoneInput(e.target.value) }))}
                       placeholder="(555) 000-0000"
                       className="w-full rounded-xl border border-black/10 bg-[#f7f5ef] px-4 py-3 text-sm text-slate-950 placeholder-slate-400 outline-none transition focus:border-slate-400 focus:ring-2 focus:ring-slate-950/5"
                     />
