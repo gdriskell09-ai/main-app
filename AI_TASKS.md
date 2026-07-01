@@ -33,6 +33,9 @@
   - `cb306b4`: `selectedLeadId` persists via `sessionStorage["admin_selected_lead"]` (same pattern as customer). Lead detail stays open after hard refresh. `Lead #[id]` / `Customer #[id]` labels added to detail headers. Lead list shows green `Customer ✓` chip when linked. `View customer ↗` always visible when customer exists (not gated on `status === "converted"`).
   - `34b55b0`: Removed "Create customer" button and amber banner from Lead detail per user preference. `handleCreateCustomer` function retained but not surfaced in UI.
 
+- Website Profiles organization/search UX complete (2026-07-01) — Single commit `d219199`, build passed (22/22 routes, 0 TypeScript errors) before commit. Files: `app/components/admin/BusinessSection.tsx`, `app/admin/AdminApp.tsx`.
+  - `d219199`: Two-panel master/detail layout replacing card grid. Left panel: search (businessName/industry/city), sort (Newest/Recently Updated/Name A→Z/Industry), filter chips (All/Has Client/No Client/Generated/Stale), dynamic profile count, compact clickable rows with status badges. Right panel: full profile detail with all actions (Preview, Edit, Generate, Client link, Reset to blueprint, Delete). Customer names passed from AdminApp via `customers` prop (String normalization for bigint/text mismatch). Visual comfort cleanup: white panels, softer borders, neutral selected-row highlight, white-card customer block with purple left stripe, borderless timestamp block, bordered action buttons.
+
 ## Current Approved Work
 
 - Roadmap and documentation organization.
@@ -93,7 +96,7 @@ Commit `30418b8`. `migrateLocalStorageProfiles()` added to `lib/business/storage
 
 *Fixed (commits `68b0446`, `e0df637`): admin section persistence; generated timestamp date+time; customer draft persistence; customer return navigation after save.*
 
-*Lead ↔ Customer navigation cleanup complete (commits `af46b6f`, `cb306b4`, `34b55b0`, 2026-06-30). Next recommended code slice: Website Profiles organization/search UX. Following slices: admin date/time seconds formatting, phone validation/formatting, Save/Submit validation UX.*
+*Website Profiles organization/search UX complete (commit `d219199`, 2026-07-01). Next recommended code slice: floating buttons / Save-Submit UX. Following slice: phone number validation/formatting.*
 
 ## Forbidden For Now
 

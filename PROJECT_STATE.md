@@ -255,6 +255,19 @@ The live Supabase project was missing the `business_profiles` table, causing 404
 
 *Fixed separately (see UX Cleanup section below): admin section persistence on hard refresh; generated content timestamp date+time; customer draft persistence; customer return navigation.*
 
+### Website Profiles Organization/Search UX (complete, 2026-07-01)
+
+Commit `d219199`. Files changed: `app/components/admin/BusinessSection.tsx`, `app/admin/AdminApp.tsx`. Build: 22/22 routes, 0 TypeScript errors before commit. No schema, RLS, service role, share tokens, preview refactor, or new dependencies.
+
+- **Two-panel master/detail layout:** Website Profiles list view replaced with a left panel (272px, scrollable profile rows) + right detail panel (flex-1), matching the Leads/Customers browsing pattern. Selecting a row opens the full profile in the right panel; clicking again deselects (right panel shows placeholder).
+- **Left panel controls:** search input (filters on `businessName`, `industry`, `city`, case-insensitive), sort select (Newest / Recently Updated / Name A→Z / Industry), five filter chips (All / Has Client / No Client / Generated / Stale), and a dynamic profile count ("X profiles" or "X of Y profiles" when filtered).
+- **Left panel rows:** compact — business name, industry · city subtitle, small status badges (Generated / Stale / Client name or "Client"). Selected row has a subtle highlight and a full-color pack accent bar.
+- **Right detail panel:** full profile detail — name/meta, services, style-pack/module/content badges, linked customer block (white card with purple left-border accent), "Open Preview ↗" + "Edit Profile" action buttons, Generate/Regenerate Content, generated timestamp + Reset to blueprint, and Delete with two-step confirm.
+- **Customer names on profiles:** `AdminApp` passes `customers={customers.map(c => ({ id: c.id, name: c.name }))}` to `<BusinessSection>`. Name shown in left-panel row badge and in right panel customer block ("Linked to [Name]" / "[Name] ↗").
+- **Visual comfort cleanup:** white left panel (was `#fafafa` bone/gray), softened panel borders (`1px solid #e8edf2` from `1.5px solid #e2e8f0`), neutral selected-row highlight (`#f8fafc` no blue tint, was `#f0f9ff`), white-card customer block with 3px purple left-border accent (was purple-tinted filled box), borderless generated-content timestamp block (was gray box), bordered action buttons (was flat gray slabs), white Delete button with pink border (was red-tinted fill).
+- **On delete:** `selectedProfileId` cleared so right panel safely returns to placeholder.
+- **Mobile:** panels stack vertically at ≤640px; left panel capped at 300px height with independent scroll.
+
 ### Lead ↔ Customer Navigation Cleanup (complete, 2026-06-30)
 
 Commits `af46b6f`, `cb306b4`, and `34b55b0`. Only file changed across all three: `app/admin/AdminApp.tsx`. Build: 22/22 routes, 0 TypeScript errors before each commit. No schema, RLS, service role, share tokens, preview refactor, or new dependencies.
@@ -966,4 +979,4 @@ Every step requires explicit owner approval before anything is published, listed
 
 ---
 
-*Last updated: Lead ↔ Customer navigation cleanup complete (2026-06-30). Latest pushed commit: `34b55b0` (remove Create customer from Lead UI). Full Lead ↔ Customer commit series: `af46b6f` (bidirectional nav wiring), `cb306b4` (persist lead context, IDs, Customer ✓ badge, always-visible View customer), `34b55b0` (remove Create customer from Lead UI). RLS/owner_id enforcement remains a separate future security slice. Next recommended code slice: Website Profiles organization/search UX. Following slices: admin date/time seconds formatting, phone validation/formatting, Save/Submit validation UX.*
+*Last updated: Website Profiles organization/search UX complete (2026-07-01). Latest pushed commit: `d219199` (improve website profile organization). Two-panel master/detail layout, search/filter/sort, customer names on profiles, visual comfort cleanup. No schema/RLS/service role/share token changes. RLS/owner_id enforcement remains a separate future security slice. Next recommended code slice: floating buttons / Save-Submit UX. Following slices: phone number validation/formatting.*

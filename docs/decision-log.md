@@ -1,5 +1,44 @@
 # Decision Log
 
+## 2026-07-01: Website Profiles Organization/Search UX
+
+Commit `d219199`. Files changed: `app/components/admin/BusinessSection.tsx`, `app/admin/AdminApp.tsx`. Build: 22/22 routes, 0 TypeScript errors before commit. No schema, RLS, service role, share tokens, preview refactor, or new dependencies. Working tree clean after push.
+
+### Layout: two-panel master/detail replacing card grid
+
+The card grid gave every profile full expanded state by default — generate button, timestamps, action buttons, and all badges visible at once. With multiple profiles this became visually dense with no hierarchy. The two-panel pattern (same as Leads/Customers) makes browsing feel natural: left panel list to select, right panel to act.
+
+Key decisions:
+- **Left panel fixed at 272px, right panel flex-1** — sufficient for compact profile rows on the left; right panel gets all remaining width for detail content. Collapses to vertical stack at ≤640px (left capped at 300px max-height, independently scrollable).
+- **`selectedProfileId` state (not sessionStorage)** — unlike `selectedLeadId` and `selectedCustomerId`, the selected profile ID is not persisted. The left list is always visible after reload; re-selection takes one click. No meaningful UX loss. Keeping sessionStorage surface area minimal.
+- **Derive `selectedProfile` from `profiles` (not `displayed`)** — the right detail panel shows the selected profile even if search/filter removes it from the left list. This avoids a confusing "detail disappears when you type in search" UX. The left panel simply won't highlight a row that is filtered out.
+- **Toggle on click** — clicking the selected row again deselects (sets `selectedProfileId` to null). Right panel returns to "Select a profile" placeholder.
+- **On delete, clear `selectedProfileId`** — `handleDelete` already updated `profiles` state via `load()`; the `selectedProfileId` clear is added so the right panel doesn't attempt to render a deleted profile's data.
+
+### Search / filter / sort
+
+All three live in the left panel header area (visible whenever `profiles.length > 0`). The `displayed` array is computed from `profiles` using all three in sequence — filter by search term, then filter by `activeFilter` chip, then sort. `isFiltered` flag drives the header count text.
+
+- **Search fields:** `businessName`, `industry`, `city` — case-insensitive substring match. City is `p.city ?? ""` to avoid null comparisons.
+- **Filter chips:** `all | has-client | no-client | generated | stale`. Staleness re-checked inline using the same `new Date(p.updatedAt) > new Date(p.generatedContent.generatedAt)` predicate as the detail panel badge.
+- **Sort options:** `newest` (by `createdAt` desc), `updated` (by `updatedAt` desc), `name` (locale `a.businessName.localeCompare(b.businessName)`), `industry` (locale compare).
+
+### Customer names on profile cards
+
+Previously the "Client ↗" badge showed only when `p.customer_id` existed, with no name. `AdminApp` already holds the full `customers` array in state. The fix: pass `customers={customers.map(c => ({ id: c.id, name: c.name }))}` to `<BusinessSection>`. Inside the component, look up with `customers.find(c => String(c.id) === p.customer_id)?.name`. The `String()` normalization on `c.id` is the same bigint/text cross-type fix established in commits `54b47bb` and `62e855d`.
+
+### Visual comfort cleanup
+
+The original two-panel iteration used `#fafafa` for the left panel background and `#f0f9ff` (blue-tinted) for selected rows, creating a "gray/bone soup" appearance. Changes:
+- Left panel: `#ffffff` white.
+- Panel divider: `1px solid #e8edf2` (from `1.5px solid #e2e8f0`).
+- Internal section dividers: `1px solid #f1f5f9` (very faint).
+- Selected row: `#f8fafc` (neutral light, no hue).
+- Linked customer block: white card with `border-left: 3px solid #7c3aed` accent (was `#f5f3ff` purple-tinted fill). Button changed from solid purple to `#f5f3ff` bg / `#6d28d9` text / `#ddd6fe` border.
+- Generated timestamp block: no box; just `border-top: 1px solid #f1f5f9` separator.
+- Generate / Edit Profile buttons: `#ffffff` bg with `1px solid #e8edf2` border (was flat gray slabs, no border).
+- Delete button: `#ffffff` bg with `1px solid #fecdd3` border (was `#fff1f2` red-tinted fill).
+
 ## 2026-06-30: Lead ↔ Customer Navigation Cleanup
 
 Commits `af46b6f`, `cb306b4`, `34b55b0`. Only file changed: `app/admin/AdminApp.tsx`. Build: 22/22 routes, 0 TypeScript errors before each commit. No schema, RLS, service role, share tokens, preview refactor, or new dependencies.
