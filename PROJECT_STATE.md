@@ -979,4 +979,13 @@ Every step requires explicit owner approval before anything is published, listed
 
 ---
 
-*Last updated: Website Profiles organization/search UX complete (2026-07-01). Latest pushed commit: `d219199` (improve website profile organization). Two-panel master/detail layout, search/filter/sort, customer names on profiles, visual comfort cleanup. No schema/RLS/service role/share token changes. RLS/owner_id enforcement remains a separate future security slice. Next recommended code slice: floating buttons / Save-Submit UX. Following slices: phone number validation/formatting.*
+### Website Profile Save Actions — Sticky Footer (complete, 2026-07-01)
+
+Commit `52269bc`. File changed: `app/components/admin/BusinessSection.tsx` only. Build: 22/22 routes, 0 TypeScript errors before commit. Working tree clean after push. No schema, RLS, service role, share tokens, preview refactor, dependencies, AdminApp, Lead/Customer, phone validation, or full redesign work.
+
+- **Sticky footer action bar added to `BusinessEditor`:** `<form className="w-full h-full flex flex-col">` replaces the outer `<div>`. Scrollable inner region (`flex: 1; overflow-y: auto`) wraps all form fields. A `flex-shrink: 0` footer bar (`border-top: 1px solid #e8edf2; background: #ffffff; padding: 14px 20px`) holds "Create Business Profile" / "Save Changes" and "Cancel" buttons, always visible regardless of scroll position.
+- **"← Back to list" button given `type="button"`** to prevent accidental form submission.
+- **Inner padding reduced from 80px to 24px** — the 80px was a legacy clearance hack.
+- **No logic changes** — `handleSubmit`, validation, draft persistence, `onSaved`, `onCancel`, and all storage calls untouched.
+
+*Last updated: Website Profile save actions / floating buttons UX complete (2026-07-01). Latest pushed commit: `52269bc` (keep website profile save actions visible). Sticky footer action bar added to BusinessEditor. No schema/RLS/service role/share token/preview refactor/dependency changes. Next recommended code slice: phone number formatting/validation.*

@@ -1,5 +1,24 @@
 # Decision Log
 
+## 2026-07-01: Website Profile Save Actions — Sticky Footer (commit `52269bc`)
+
+Commit `52269bc`. File changed: `app/components/admin/BusinessSection.tsx` only. Build: 22/22 routes, 0 TypeScript errors before commit. Working tree clean after push. No schema, RLS, service role, share tokens, preview refactor, dependencies, AdminApp, Lead/Customer, phone validation, or full redesign work.
+
+### Problem
+
+The `BusinessEditor` form is long — name, industry, city, phone, services, tagline, style pack, and modules. On a standard screen the primary action buttons ("Create Business Profile" / "Save Changes" and "Cancel") were only reachable by scrolling to the very bottom. An admin user editing a profile had no persistent indication of where to submit.
+
+### Solution: scrollable content + sticky footer
+
+The outer wrapper was changed from `<div className="w-full h-full overflow-y-auto">` to `<form className="w-full h-full flex flex-col" onSubmit={handleSubmit}>`. A scrollable inner region (`flex: 1; overflow-y: auto`) wraps the form fields. A non-scrolling footer bar (`flex-shrink: 0; border-top; background: #ffffff; padding: 14px 20px`) sits at the bottom of the flex column and always stays in view.
+
+Key decisions:
+- **Form element becomes the flex container** — the `<form>` replaces the outer `<div>` so submit still triggers on enter and button `type="submit"` still works. Eliminates the nested `<form>` that existed before.
+- **"← Back to list" button gets `type="button"`** — it was inside the form but not a submit button; without the attribute it would default to `type="submit"` in some browsers. Explicit `type="button"` prevents accidental form submission on back-click.
+- **Bottom padding reduced from 80px to 24px** — the 80px was a hack to clear a fixed-bottom bar that didn't exist. Now that the footer is a flex sibling (not `position: fixed`), 24px normal padding is sufficient.
+- **Cancel button style updated to bordered white** — `background: #ffffff; border: 1px solid #e8edf2` instead of the old `background: #f1f5f9; border: none`. Visually lighter in the sticky bar, still clearly distinct from the dark submit button.
+- **No logic changes** — `handleSubmit`, `validate`, `onSaved`, `onCancel`, draft persistence, and all storage calls are untouched.
+
 ## 2026-07-01: Website Profiles Organization/Search UX
 
 Commit `d219199`. Files changed: `app/components/admin/BusinessSection.tsx`, `app/admin/AdminApp.tsx`. Build: 22/22 routes, 0 TypeScript errors before commit. No schema, RLS, service role, share tokens, preview refactor, or new dependencies. Working tree clean after push.

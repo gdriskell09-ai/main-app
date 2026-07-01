@@ -36,6 +36,9 @@
 - Website Profiles organization/search UX complete (2026-07-01) — Single commit `d219199`, build passed (22/22 routes, 0 TypeScript errors) before commit. Files: `app/components/admin/BusinessSection.tsx`, `app/admin/AdminApp.tsx`.
   - `d219199`: Two-panel master/detail layout replacing card grid. Left panel: search (businessName/industry/city), sort (Newest/Recently Updated/Name A→Z/Industry), filter chips (All/Has Client/No Client/Generated/Stale), dynamic profile count, compact clickable rows with status badges. Right panel: full profile detail with all actions (Preview, Edit, Generate, Client link, Reset to blueprint, Delete). Customer names passed from AdminApp via `customers` prop (String normalization for bigint/text mismatch). Visual comfort cleanup: white panels, softer borders, neutral selected-row highlight, white-card customer block with purple left stripe, borderless timestamp block, bordered action buttons.
 
+- Website Profile save actions / floating buttons UX complete (2026-07-01) — Single commit `52269bc`, build passed (22/22 routes, 0 TypeScript errors) before commit. File: `app/components/admin/BusinessSection.tsx` only.
+  - `52269bc`: Added sticky footer action bar to `BusinessEditor`. Form wrapper changed to `<form className="w-full h-full flex flex-col">` with scrollable inner content region and a `flex-shrink: 0` footer bar. "Create Business Profile" / "Save Changes" and "Cancel" now stay visible at all times while editing or creating a Website Profile. "← Back to list" button given explicit `type="button"` to prevent accidental submit. Inner padding reduced from 80px to 24px. No business logic, validation, storage, draft, or submit handler changes. No AdminApp/Lead/Customer/schema/RLS/service role/share token/preview refactor/dependency/phone-validation/full-redesign changes.
+
 ## Current Approved Work
 
 - Roadmap and documentation organization.
