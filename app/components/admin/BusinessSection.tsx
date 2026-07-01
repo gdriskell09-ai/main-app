@@ -88,6 +88,26 @@ function blankProfile(): Omit<BusinessProfile, "id" | "createdAt" | "updatedAt">
   };
 }
 
+// ── Phone helpers ─────────────────────────────────────────────────
+
+function digitsOnly(value: string): string {
+  return value.replace(/\D/g, "");
+}
+
+function formatPhone(value: string | null | undefined): string {
+  if (!value) return value ?? "";
+  const d = digitsOnly(value);
+  if (d.length !== 10) return value;
+  return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+}
+
+function formatPhoneInput(value: string): string {
+  const d = digitsOnly(value).slice(0, 10);
+  if (d.length <= 3) return d;
+  if (d.length <= 6) return `(${d.slice(0, 3)}) ${d.slice(3)}`;
+  return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+}
+
 // ── Shared tiny UI helpers ────────────────────────────────────────
 
 function Label({ children }: { children: React.ReactNode }) {
@@ -530,7 +550,7 @@ export default function BusinessSection({ onNavigate, onNavigateToCustomer, cust
                   <div style={{ display: "flex", gap: "8px", flexWrap: "wrap", alignItems: "center" }}>
                     {p.industry && <span style={{ fontSize: "12px", color: "#64748b", background: "#f1f5f9", borderRadius: "6px", padding: "2px 9px" }}>{p.industry}</span>}
                     {p.city    && <span style={{ fontSize: "12px", color: "#64748b" }}>📍 {p.city}</span>}
-                    {p.phone   && <span style={{ fontSize: "12px", color: "#64748b" }}>📞 {p.phone}</span>}
+                    {p.phone   && <span style={{ fontSize: "12px", color: "#64748b" }}>📞 {formatPhone(p.phone)}</span>}
                   </div>
                 </div>
 
@@ -751,6 +771,8 @@ function BusinessEditor({ existing, prefill, onSaved, onCancel, onFormChange, ed
     const errs: string[] = [];
     if (!form.businessName.trim()) errs.push("Business name is required.");
     if (!form.industry) errs.push("Industry is required.");
+    if (form.phone.trim() && digitsOnly(form.phone).length !== 10)
+      errs.push("Phone number must be 10 digits (US format).");
     setErrors(errs);
     return errs.length === 0;
   }
@@ -914,7 +936,7 @@ function BusinessEditor({ existing, prefill, onSaved, onCancel, onFormChange, ed
               <input
                 style={inputStyle}
                 value={form.phone}
-                onChange={(e) => set("phone", e.target.value)}
+                onChange={(e) => set("phone", formatPhoneInput(e.target.value))}
                 placeholder="(555) 123-4567"
                 type="tel"
               />

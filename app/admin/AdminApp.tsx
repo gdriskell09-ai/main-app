@@ -16,6 +16,26 @@ import {
 const LeadMapComponent   = dynamic(() => import("./LeadMap"),    { ssr: false });
 const CanvassMapComponent = dynamic(() => import("./CanvassMap"), { ssr: false });
 
+// ─── Phone helpers ────────────────────────────────────────────
+
+function digitsOnly(value: string): string {
+  return value.replace(/\D/g, "");
+}
+
+function formatPhone(value: string | null | undefined): string {
+  if (!value) return value ?? "";
+  const d = digitsOnly(value);
+  if (d.length !== 10) return value;
+  return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+}
+
+function formatPhoneInput(value: string): string {
+  const d = digitsOnly(value).slice(0, 10);
+  if (d.length <= 3) return d;
+  if (d.length <= 6) return `(${d.slice(0, 3)}) ${d.slice(3)}`;
+  return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+}
+
 // ─── Types ────────────────────────────────────────────────────
 
 type Section = "dashboard" | "leads" | "customers" | "invoices" | "map" | "canvass" | "maphub" | "contracts" | "ai_generator" | "websites" | "settings";
@@ -365,7 +385,7 @@ function LeadDetail({
       <div className="mt-4 grid gap-3 rounded-[1.5rem] border border-black/5 bg-[#f7f5ef] p-5 text-sm sm:grid-cols-2">
         {[
           { label: "Email", value: lead.email },
-          { label: "Phone", value: lead.phone },
+          { label: "Phone", value: formatPhone(lead.phone) },
           { label: "Business type", value: lead.type },
           { label: "Needs", value: lead.need },
           { label: "Submitted", value: fmt(lead.created_at) },
@@ -781,7 +801,7 @@ function CustomerDetail({
       <div className="mt-4 grid gap-3 rounded-[1.5rem] border border-black/5 bg-[#f7f5ef] p-5 text-sm sm:grid-cols-2">
         {[
           { label: "Email",          value: customer.email },
-          { label: "Phone",          value: customer.phone },
+          { label: "Phone",          value: formatPhone(customer.phone) },
           { label: "Address",        value: customer.address },
           { label: "Customer since", value: fmt(customer.created_at) },
         ].map(({ label, value }) => value && (
@@ -1204,7 +1224,7 @@ function CustomersSection({
                 className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400" />
               <input value={addEmail} onChange={(e) => setAddEmail(e.target.value)} placeholder="Email"
                 className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400" />
-              <input value={addPhone} onChange={(e) => setAddPhone(e.target.value)} placeholder="Phone"
+              <input value={addPhone} onChange={(e) => setAddPhone(formatPhoneInput(e.target.value))} placeholder="(555) 123-4567" type="tel"
                 className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400" />
               <input value={addBusiness} onChange={(e) => setAddBusiness(e.target.value)} placeholder="Business (optional)"
                 className="w-full rounded-lg border border-black/10 bg-white px-3 py-2 text-sm outline-none focus:border-slate-400" />
@@ -1244,7 +1264,7 @@ function CustomersSection({
                     </span>
                   )}
                 </div>
-                <p className="mt-1 truncate text-xs text-slate-400">{c.email ?? c.phone ?? "No contact info"}</p>
+                <p className="mt-1 truncate text-xs text-slate-400">{c.email ?? (c.phone ? formatPhone(c.phone) : null) ?? "No contact info"}</p>
               </button>
             );
           })}

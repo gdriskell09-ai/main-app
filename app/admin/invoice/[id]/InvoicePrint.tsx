@@ -28,6 +28,13 @@ type Customer = {
   address: string | null;
 };
 
+function formatPhone(value: string | null | undefined): string {
+  if (!value) return value ?? "";
+  const d = value.replace(/\D/g, "");
+  if (d.length !== 10) return value;
+  return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+}
+
 function usd(n: number) {
   return `$${n.toLocaleString("en-US", { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
 }
@@ -154,7 +161,7 @@ export default function InvoicePrint({ id }: { id: string }) {
               <p style={{ fontWeight: 700, fontSize: "15px", color: "#0f172a", margin: "0 0 2px" }}>{customer?.name ?? "—"}</p>
               {customer?.business && <p style={{ fontSize: "13px", color: "#475569", margin: "2px 0" }}>{customer.business}</p>}
               {customer?.email   && <p style={{ fontSize: "13px", color: "#475569", margin: "2px 0" }}>{customer.email}</p>}
-              {customer?.phone   && <p style={{ fontSize: "13px", color: "#475569", margin: "2px 0" }}>{customer.phone}</p>}
+              {customer?.phone   && <p style={{ fontSize: "13px", color: "#475569", margin: "2px 0" }}>{formatPhone(customer.phone)}</p>}
               {customer?.address && <p style={{ fontSize: "13px", color: "#475569", margin: "2px 0" }}>{customer.address}</p>}
             </div>
             <div>

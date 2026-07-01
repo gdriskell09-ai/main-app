@@ -31,6 +31,13 @@ const statusConfig: Record<LeadStatus, { label: string; dot: string; bg: string 
 
 const allStatuses = Object.keys(statusConfig) as LeadStatus[];
 
+function formatPhone(value: string | null | undefined): string {
+  if (!value) return value ?? "";
+  const d = value.replace(/\D/g, "");
+  if (d.length !== 10) return value;
+  return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+}
+
 function formatDate(iso: string) {
   return new Date(iso).toLocaleDateString("en-US", {
     month: "short",
@@ -87,7 +94,7 @@ function LeadDetail({ lead, notesValue, saving, onClose, onStatusChange, onNotes
       <div className="mt-6 grid gap-4 rounded-[1.5rem] border border-black/5 bg-[#f7f5ef] p-5 text-sm sm:grid-cols-2">
         {[
           { label: "Email", value: lead.email },
-          { label: "Phone", value: lead.phone },
+          { label: "Phone", value: formatPhone(lead.phone) },
           { label: "Business type", value: lead.type },
           { label: "Needs", value: lead.need },
           { label: "Submitted", value: formatDate(lead.created_at) },

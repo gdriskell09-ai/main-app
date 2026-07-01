@@ -2,6 +2,13 @@
 
 import type { SectionRenderProps, FooterPremiumProps } from "@/lib/website-engine/types";
 
+function formatPhone(value: string | null | undefined): string {
+  if (!value) return value ?? "";
+  const d = value.replace(/\D/g, "");
+  if (d.length !== 10) return value;
+  return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
+}
+
 export default function FooterPremium({
   props,
   stylePack,
@@ -147,7 +154,7 @@ export default function FooterPremium({
                     gap: "8px",
                   }}
                 >
-                  📞 {phone}
+                  📞 {formatPhone(phone)}
                 </a>
               )}
               {email && (
