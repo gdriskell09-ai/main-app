@@ -1,5 +1,44 @@
 # Decision Log
 
+## 2026-06-30: Phase 3.7 UX Cleanup — Customer Context Persistence, Lookup Normalization, Existing Profile Edit Draft
+
+Commits `4e6ea8a`, `62e855d`, and `d2ec080`. Build: 22/22 routes, 0 TypeScript errors before each commit. No schema, RLS, service role, share tokens, preview refactor, or new dependencies in any commit. Browser QA not yet confirmed by Grant.
+
+### `4e6ea8a` — Customer context persistence + Client ↗ navigation + post-save return
+
+Files: `app/admin/AdminApp.tsx`, `app/components/admin/BusinessSection.tsx`.
+
+Root cause: `selectedCustomerId` was local React state only — cleared on every hard refresh. "Client ↗" badges on Website Profile cards had no `onClick` handler. Saving an existing customer-linked profile returned to the Website Profiles list instead of navigating back to the customer.
+
+Key decisions:
+- **`selectedCustomerId` in sessionStorage** — same read-on-init + write-on-change pattern as `admin_active_section`. `useState` lazy initializer reads `sessionStorage["admin_selected_customer"]`; a `useEffect` writes on every change. Value cleared on explicit customer deselect.
+- **`onNavigateToCustomer` prop added to `BusinessSection`** — `AdminApp` passes `(id) => { setSelectedCustomerId(id); setSection("customers"); }`. Used by "Client ↗" badge clicks and by `handleSaved()` when a customer-linked profile is saved.
+- **`handleSaved()` returns to customer for both new and existing customer-linked profiles** — condition: `returnCustomerId = (!editing && prefillData?.customer_id) ? prefillData.customer_id : (editing?.customer_id ?? null)`. If set and `onNavigateToCustomer` is available, navigates to customer; else falls back to `onNavigate?.("customers")`.
+- No schema change. `customer_id` is already stored on the profile; this only wires the navigation callback.
+
+### `62e855d` — Selected customer lookup normalization
+
+File: `app/admin/AdminApp.tsx` only.
+
+Root cause: `customers.find((c) => c.id === selectedCustomerId)` compared `customers.id` (Postgres `bigint` → JS number at runtime) with `selectedCustomerId` (always a string from sessionStorage or `business_profiles.customer_id`). Strict `===` between a number and a string is always `false`. All Option A scenarios from `4e6ea8a` failed because `selected` was always `null`.
+
+Key decisions:
+- **Normalize at the comparison** — `customers.find((c) => String(c.id) === String(selectedCustomerId ?? ""))`. Same `String()` pattern as `54b47bb`'s `linkedProfile` fix. No schema change. No type widening. Safe because `String()` on both sides turns both into `"12"` or `""`.
+- **This is the same bigint/text cross-type mismatch class** as `54b47bb`. Pattern to watch: any `===` comparison between a Supabase `bigint`-column value and a string that came from sessionStorage, a `text` column, or a URL param will silently fail.
+
+### `d2ec080` — Existing Website Profile edit draft persistence
+
+Files: `lib/business/draftProfile.ts`, `app/components/admin/BusinessSection.tsx`.
+
+Root cause: editing an existing Website Profile, typing changes, then navigating away or hard-refreshing lost all unsaved edits. The `wp_draft` mechanism only covered new-profile creation; edit mode had no sessionStorage write-back.
+
+Key decisions:
+- **New `wp_edit_draft` key** — stores `{ ...form, id: profileId }` (current form state + profile ID for identity check) with the same 10-minute TTL via existing `store()` wrapper. Separate from `wp_draft` to avoid collision between new-profile and edit flows.
+- **Peek-not-consume lifecycle** — `peekWebsiteProfileEditDraft()` reads without deleting on mount (same pattern as `wp_draft`). Consumed at explicit Save or Cancel only. Stale drafts expire via TTL.
+- **Three-priority mount effect** — A: `wp_draft` (new profile) → B: `wp_pending_edit` (one-shot Edit button signal, with stale-draft ID check to discard a draft for a different profile) → C: `wp_edit_draft` (reload recovery). Priority A unchanged from before; B unchanged except the stale-draft check; C is new.
+- **`editDraftForm` prop on `BusinessEditor`** — when both `existing` and `editDraftForm` are set, the form initializer builds a base from `existing` (safe, from Supabase) then overlays draft fields, stripping `id`, `createdAt`, `updatedAt`, `generatedContent` (which always come from the saved record, not the draft). `generatedContent` is intentionally never stored in the edit draft.
+- **`onFormChange` writes to `wp_edit_draft` in edit mode** — `BusinessSection` passes `(f) => createWebsiteProfileEditDraft(editing.id, f)` when `editing !== null`. New-profile `onFormChange` (writes to `wp_draft`) is unchanged.
+
 ## 2026-06-30: Phase 3.7 UX Cleanup — Section Persistence, Timestamp, Draft Persistence, Customer Return, Typed Draft Field Persistence, Customer-Side Profile Display Fix
 
 Commits `68b0446`, `e0df637`, `a9c143e`, and `54b47bb`. Build: 22/22 routes, 0 TypeScript errors before each commit. No schema, RLS, service role, share tokens, preview refactor, or new dependencies in any commit.

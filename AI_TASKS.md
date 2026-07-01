@@ -19,11 +19,14 @@
 - Phase 3.7 Slices B+C+D complete (2026-06-28) — Business profile storage migrated from localStorage to Supabase. Commit `8bb8abb`. Files: `lib/business/storage.ts`, `BusinessSection.tsx`, `AdminApp.tsx`, `[businessId]/page.tsx`.
 - Phase 3.7 Slice E complete (2026-06-28) — One-time localStorage → Supabase profile import. Commit `30418b8`. Files: `lib/business/storage.ts`, `BusinessSection.tsx`. `migrateLocalStorageProfiles()` runs on first admin Websites load; sets `bp_migrated` flag after all upserts succeed.
 - Phase 3.7 runtime QA passed (2026-06-30) — Live Supabase project had a missing `business_profiles` table (causing 404s). Schema definition added to `supabase/schema-complete.sql` (commit `767d30f`) and applied via SQL Editor. No app code changed. All runtime QA scenarios passed (see PROJECT_STATE.md §5 for full QA checklist).
-- Phase 3.7 UX cleanup complete (2026-06-30) — Four fix commits, build passed (22/22 routes, 0 TypeScript errors) before each:
+- Phase 3.7 UX cleanup complete (2026-06-30) — Seven fix commits, build passed (22/22 routes, 0 TypeScript errors) before each:
   - `68b0446`: admin section persists across hard refresh (sessionStorage); generated content timestamp shows date + time. Files: `AdminApp.tsx`, `BusinessSection.tsx`.
   - `e0df637`: customer-started Website Profile drafts persist across section navigation (peek-not-consume); saving returns to Customers. Files: `lib/business/draftProfile.ts`, `BusinessSection.tsx`, `AdminApp.tsx`.
   - `a9c143e`: typed unsaved changes in customer-started Website Profile form now persist across section navigation and hard refresh (form state written back to sessionStorage draft on every change). File: `BusinessSection.tsx`.
   - `54b47bb`: Customer detail page now correctly shows the linked Website Profile card. Root cause was a `customer_id` type mismatch (`text` string vs. `bigint` number) in the `linkedProfile` lookup, plus a missing loading state. File: `AdminApp.tsx`.
+  - `4e6ea8a`: selected Customer context persists across admin reload (`admin_selected_customer` sessionStorage key); "Client ↗" badge in Website Profile list cards now navigates to the linked customer; saving a customer-linked profile (new or existing) returns to the customer. Files: `AdminApp.tsx`, `BusinessSection.tsx`.
+  - `62e855d`: fixed selected customer lookup — `customers.find` was using strict `===` between a bigint number (`customers.id`) and a string (sessionStorage value), always failing. Fixed with `String()` normalization. File: `AdminApp.tsx`.
+  - `d2ec080`: existing Website Profile edits now persist across reload via `wp_edit_draft` sessionStorage key. Three-priority mount effect (new draft → pending-edit signal → edit draft reload recovery). `editDraftForm` prop on `BusinessEditor` overlays draft fields on top of the saved record. Files: `lib/business/draftProfile.ts`, `BusinessSection.tsx`.
 
 ## Current Approved Work
 

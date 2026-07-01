@@ -257,7 +257,7 @@ The live Supabase project was missing the `business_profiles` table, causing 404
 
 ### Phase 3.7 — UX Cleanup Fixes (2026-06-30)
 
-Commits `68b0446`, `e0df637`, `a9c143e`, and `54b47bb`. Build: 22/22 routes, 0 TypeScript errors before each commit. No schema, RLS, service role, share tokens, preview refactor, or new dependencies.
+Commits `68b0446`, `e0df637`, `a9c143e`, `54b47bb`, `4e6ea8a`, `62e855d`, and `d2ec080`. Build: 22/22 routes, 0 TypeScript errors before each commit. No schema, RLS, service role, share tokens, preview refactor, or new dependencies.
 
 **`68b0446` — Admin section persistence + generated content timestamp:**
 - `app/admin/AdminApp.tsx`: `useState` initializer now reads `sessionStorage["admin_active_section"]` as a fallback when no nav target is set; a new `useEffect` writes the current section on every change. Hard refresh no longer resets admin to Overview.
@@ -280,6 +280,24 @@ Commits `68b0446`, `e0df637`, `a9c143e`, and `54b47bb`. Build: 22/22 routes, 0 T
 - Secondary fix: added a `profilesLoading` state (`true` initially, `false` after `getAllProfiles()` resolves) so the Website Profile section shows a "Loading…" placeholder instead of briefly and incorrectly showing "No website profile yet." before profiles finish loading.
 - Build: 22/22 routes, 0 TypeScript errors. No schema, RLS, service role, share tokens, preview refactor, or new dependencies.
 - Manual browser QA not yet confirmed by Grant.
+
+**`4e6ea8a` — Customer context persistence + Client ↗ navigation + post-save return:**
+- `app/admin/AdminApp.tsx`: added `selectedCustomerId` sessionStorage persistence — `useState` lazy initializer reads `admin_selected_customer` on mount; a `useEffect` writes it on every change. Customer selection now survives hard refresh. Added `onNavigateToCustomer` prop wiring to `<BusinessSection />` — `(id) => { setSelectedCustomerId(id); setSection("customers"); }`.
+- `app/components/admin/BusinessSection.tsx`: added `onNavigateToCustomer` prop; "Client ↗" badge in profile list cards now calls it. `handleSaved()` calls `onNavigateToCustomer(customer_id)` after saving a customer-linked profile (both new and existing), returning the admin to the linked customer.
+- Build: 22/22 routes, 0 TypeScript errors. No schema, RLS, service role, share tokens, preview refactor, or new dependencies.
+- Browser QA not yet confirmed by Grant.
+
+**`62e855d` — Selected customer lookup normalization:**
+- `app/admin/AdminApp.tsx` only. Root cause: `customers.find((c) => c.id === selectedCustomerId)` used strict `===` between `customers.id` (Postgres `bigint` → JS number) and `selectedCustomerId` (string from sessionStorage). Always returned `null`, breaking all customer context restoration after reload.
+- Fix: `customers.find((c) => String(c.id) === String(selectedCustomerId ?? ""))` — same `String()` normalization pattern applied in `54b47bb` for the `linkedProfile` lookup.
+- Build: 22/22 routes, 0 TypeScript errors. No schema, RLS, service role, share tokens, preview refactor, or new dependencies.
+- Browser QA not yet confirmed by Grant.
+
+**`d2ec080` — Existing Website Profile edit draft persistence:**
+- `lib/business/draftProfile.ts`: added `EDIT_DRAFT_KEY = "wp_edit_draft"` constant and three new exports: `createWebsiteProfileEditDraft(profileId, form)` stores `{ ...form, id: profileId }` with 10-minute TTL; `peekWebsiteProfileEditDraft()` reads without consuming; `consumeWebsiteProfileEditDraft()` deletes the key (called at Save or Cancel).
+- `app/components/admin/BusinessSection.tsx`: added `editDraftForm` state; replaced single-priority mount effect with three-priority logic (A: `wp_draft` → new profile; B: `wp_pending_edit` → one-shot Edit click, with stale-draft ID check; C: `wp_edit_draft` → reload recovery of in-progress existing-profile edit). `onFormChange` in edit mode now writes to `wp_edit_draft`. `BusinessEditor` gains `editDraftForm?` prop — when both `existing` and `editDraftForm` are set, draft fields overlay the `existing`-derived base (stripping `id/createdAt/updatedAt/generatedContent` which always come from the saved record).
+- Build: 22/22 routes, 0 TypeScript errors. No schema, RLS, service role, share tokens, preview refactor, or new dependencies.
+- Browser QA not yet confirmed by Grant.
 
 ### Phase 3.5 — Generate Website Content (complete, confirmed via audit 2026-06-28)
 
@@ -934,4 +952,4 @@ Every step requires explicit owner approval before anything is published, listed
 
 ---
 
-*Last updated: Phase 3.7 UX cleanup complete (2026-06-30). Latest commits: `68b0446` (admin section persistence + timestamp), `e0df637` (customer draft persistence + return navigation), `a9c143e` (typed draft field persistence), `54b47bb` (customer-side linked Website Profile display fix). RLS/owner_id enforcement remains a separate future security slice.*
+*Last updated: Phase 3.7 UX cleanup complete (2026-06-30). Latest pushed commit: `d2ec080` (existing Website Profile edit draft persistence). Full commit series: `68b0446` (admin section persistence + timestamp), `e0df637` (customer draft persistence + return navigation), `a9c143e` (typed draft field persistence), `54b47bb` (customer-side linked Website Profile display fix), `4e6ea8a` (customer context persistence + Client ↗ + post-save return), `62e855d` (selected customer lookup normalization), `d2ec080` (edit draft persistence via `wp_edit_draft`). RLS/owner_id enforcement remains a separate future security slice. Next recommended code slice: Lead ↔ Customer navigation linking (`AdminApp.tsx` only). Following slice: Save/Submit validation warnings (Business Profile editor first).*
