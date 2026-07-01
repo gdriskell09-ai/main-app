@@ -1003,4 +1003,20 @@ Files changed across both commits: `app/components/admin/BusinessSection.tsx`, `
 - **Public contact form (`app/contact/page.tsx`):** phone input uses `formatPhoneInput` on change; field remains optional; no server-side validation added; `app/api/contact/route.ts` unchanged.
 - **Lead → Create Customer restored (`AdminApp.tsx`):** `LeadDetail` now shows "No customer record yet." + "Create customer from lead" button when `!hasCustomer`. Uses the existing `onCreateCustomer` prop and `handleCreateCustomer` handler (which were retained in `34b55b0` but not surfaced in the UI). No new logic, no new DB columns.
 
-*Last updated: Phone formatting/validation (US MVP) complete (2026-07-01). Latest pushed commits: `dfb938c`, `0cad394`. No schema/RLS/service role/share token/preview refactor/dependency/API/storage/type/country-code changes. Next recommended task: Phase 3.7 admin workflow QA pass (not a new feature).*
+### Phase 3.7 QA Bug Fix — Website Profile Edit Context (complete, 2026-07-01)
+
+Commit `8471d79`. File changed: `app/components/admin/BusinessSection.tsx` only. Build: 22/22 routes, 0 TypeScript errors before commit. Working tree clean after push. No schema, RLS, service role, share tokens, preview refactor, dependencies, API, storage, type, phone, AdminApp, or full redesign changes.
+
+**Bug fixed:** Editing a customer-linked Website Profile from the Website Profiles list/detail panel navigated to the Customers section after save instead of returning to Website Profiles.
+
+**Root cause:** `handleSaved()` returned to customer whenever `editing?.customer_id` was set, regardless of how the editor was opened (customer-launched vs. profiles-list-launched).
+
+**Fix:** Added `editFromCustomer: boolean` state to `BusinessSection`. Set to `true` only in Path A (customer-launched create draft with `customer_id`) and Path B (pending-edit signal from Customer detail "Edit" button). Set to `false` in `openEdit()` (profiles list), `openCreate()` (manual), and Path C (reload recovery). In `handleSaved()`, customer navigation is now gated on `editFromCustomer`.
+
+- **Customer → Create/Edit Website Profile → Save** still returns to Customer. ✓
+- **Website Profiles list "Edit Profile" → Save** now returns to Website Profiles list. ✓
+- **Reload recovery edits → Save** now returns to Website Profiles list (context lost on reload). ✓
+
+**Known remaining gap (low priority, not fixed in this slice):** The "Create customer from lead" button in `LeadDetail` has no loading/disabled guard against double-click. Pre-existing behavior, not introduced by recent slices.
+
+*Last updated: Phase 3.7 QA bug fix complete (2026-07-01). Latest pushed commit: `8471d79` (preserve website profile edit context). No schema/RLS/service role/share token/preview refactor/dependency/API/storage/type/phone/AdminApp/full-redesign changes. Phase 3.7 admin workflow QA pass is now complete. Next step: next feature planning.*

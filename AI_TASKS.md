@@ -43,6 +43,9 @@
   - `dfb938c`: Inline `digitsOnly`/`formatPhone`/`formatPhoneInput` helpers added (no dependencies). Website Profile phone input auto-formats and validates (blocks non-empty non-10-digit on save). Add Customer input gets `type="tel"` + auto-format. Lead/customer/admin/invoice/footer display uses `formatPhone` (falls back to raw string for non-10-digit values). No schema/API/storage/type changes.
   - `0cad394`: Public contact form phone input wired to `formatPhoneInput`; `app/api/contact/route.ts` unchanged. Lead detail "Create customer from lead" button restored using existing `onCreateCustomer` prop and handler (no new logic or DB columns).
 
+- Phase 3.7 QA bug fix — Website Profile edit context (2026-07-01) — Single commit `8471d79`, build passed (22/22 routes, 0 TypeScript errors) before commit. File: `app/components/admin/BusinessSection.tsx` only.
+  - `8471d79`: Added `editFromCustomer: boolean` state. Set `true` only in Path A (customer-launched create draft with `customer_id`) and Path B (pending-edit signal from Customer detail "Edit" button). Set `false` in `openEdit()` (profiles list), `openCreate()` (manual), and Path C (reload recovery). `handleSaved()` now gates customer navigation on `editFromCustomer` — edits opened from Website Profiles list/detail stay in Website Profiles on save. No AdminApp/Lead/schema/RLS/service role/share token/preview refactor/dependency/phone/full-redesign changes.
+
 ## Current Approved Work
 
 - Roadmap and documentation organization.

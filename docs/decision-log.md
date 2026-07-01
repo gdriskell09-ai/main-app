@@ -1,5 +1,42 @@
 # Decision Log
 
+## 2026-07-01: Website Profile Edit Context Bug Fix (commit `8471d79`)
+
+Commit `8471d79`. File changed: `app/components/admin/BusinessSection.tsx` only. Build: 22/22 routes, 0 TypeScript errors before commit. No schema, RLS, service role, share tokens, preview refactor, dependencies, API, storage, type, phone, AdminApp, or full-redesign changes.
+
+### Bug
+
+Editing a customer-linked Website Profile from the Website Profiles list/detail panel navigated to the Customers section after save. Only profiles opened from a Customer context should return there.
+
+### Root cause
+
+`handleSaved()` read `editing?.customer_id` to decide whether to navigate back to a customer. Because any customer-linked profile carries a `customer_id` field, even profiles opened via `openEdit()` from the profiles list triggered customer navigation.
+
+### Fix: `editFromCustomer` state flag
+
+Added `editFromCustomer: boolean` state to `BusinessSection`. The flag is `true` only when the editor was opened from a Customer context:
+
+- **Path A** (new-profile draft with `customer_id`): set `true` in mount effect.
+- **Path B** (pending-edit signal from Customer "Edit" button): set `true` in mount effect.
+- **`openEdit()`** (profiles list/detail panel "Edit Profile"): set `false`.
+- **`openCreate()`** (manual create from profiles list): set `false`.
+- **Path C** (reload recovery of an edit-in-progress): set `false` — customer context is irrecoverable on reload; staying in Website Profiles is the safe default.
+
+`handleSaved()` now reads `editFromCustomer` instead of the raw `customer_id` field to decide navigation.
+
+### Behavior after fix
+
+| How editor was opened | Save navigates to |
+|---|---|
+| Customer → Create/Edit Website Profile | Customer detail |
+| Website Profiles list "Edit Profile" | Website Profiles list |
+| Website Profiles list "Create" | Website Profiles list |
+| Reload recovery (any) | Website Profiles list |
+
+### Known remaining gap
+
+"Create customer from lead" button in `LeadDetail` has no double-click guard. Pre-existing; not introduced by this or any recent slice. Low priority — requires separate approval.
+
 ## 2026-07-01: Phone Formatting / Validation — US MVP (commits `dfb938c`, `0cad394`)
 
 Commits `dfb938c` and `0cad394`. Files changed: `BusinessSection.tsx`, `AdminApp.tsx`, `AdminDashboard.tsx`, `InvoicePrint.tsx`, `FooterPremium.tsx`, `app/contact/page.tsx`. Build: 22/22 routes, 0 TypeScript errors before each commit. No schema, RLS, service role, share tokens, preview refactor, dependencies, API route, storage, type, or country-code changes.
