@@ -362,18 +362,6 @@ function LeadDetail({
           </div>
         </div>
       )}
-      {!hasCustomer && lead.status === "converted" && (
-        <div className="mt-4 rounded-[1.5rem] border border-amber-200 bg-amber-50 px-4 py-3">
-          <div className="flex items-center justify-between gap-3">
-            <p className="text-sm text-amber-800">Converted — create a customer record to track jobs and quotes.</p>
-            <button onClick={onCreateCustomer}
-              className="shrink-0 rounded-full bg-amber-600 px-4 py-2 text-xs font-bold text-white transition hover:bg-amber-700">
-              Create customer
-            </button>
-          </div>
-        </div>
-      )}
-
       <div className="mt-4 grid gap-3 rounded-[1.5rem] border border-black/5 bg-[#f7f5ef] p-5 text-sm sm:grid-cols-2">
         {[
           { label: "Email", value: lead.email },
