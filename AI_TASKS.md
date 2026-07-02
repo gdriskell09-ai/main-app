@@ -49,6 +49,10 @@
 - Phase 3.7 QA bug fix — Lead Create Customer double-click guard (2026-07-01) — Single commit `1ed1fd7`, build passed (22/22 routes, 0 TypeScript errors) before commit. File: `app/admin/AdminApp.tsx` only.
   - `1ed1fd7`: Added `creatingCustomer` boolean state to `LeadsSection`. `handleCreateCustomer` now guards against re-entry (`if (!selected || creatingCustomer) return`), sets the flag `true` before awaiting, and resets it in `finally`. `creatingCustomer` passed to `LeadDetail` as a prop; button disabled and shows "Creating…" while active. No business logic, navigation, DB call, schema, RLS, service role, share token, preview refactor, dependency, API, storage, type, phone, Website Profiles, or full redesign changes. Phase 3.7 admin QA bug-fix batch is now clean.
 
+- Contact/phone/email cleanup complete (2026-07-02) — Two commits pushed on `main`/`origin/main`, build passed (22/22 routes, 0 TypeScript errors) before each. Manual browser QA passed for both.
+  - `43f4087`: Public contact form phone (`app/contact/page.tsx`) stays optional; non-empty values must be exactly 10 digits or submit is blocked with an inline error. Auto-formats as typed.
+  - `0ee4e12`: Customer contact info (`AdminApp.tsx`) is now read-only by default with a single "Edit" button revealing editable Email + Phone fields and Save/Cancel (only while editing). Both validate safely (blank allowed; phone needs 10 digits, email needs a reasonable shape) and save via one combined handler that updates only the customer's `email`/`phone` columns. Notes behavior unchanged. Fixed a latent bug in `BusinessSection.tsx` where the Website Profile phone-differ note never rendered (root cause: unstringified `customer_id` set from a Postgres `bigint` customer id at profile-creation time); added a matching email-differ note. Customer contact info and Website Profile contact info remain intentionally separate — no automatic sync added. Files: `app/admin/AdminApp.tsx`, `app/components/admin/BusinessSection.tsx`.
+
 ## Current Approved Work
 
 - Roadmap and documentation organization.

@@ -1,5 +1,40 @@
 # Decision Log
 
+## 2026-07-02: Contact / Phone / Email Cleanup (commits `43f4087`, `0ee4e12`)
+
+Two commits, both pushed to `main` and `origin/main`. Build passed (22/22 routes, 0 TypeScript errors) before each. Manual browser QA passed for both. No schema, RLS, service role, share tokens, preview refactor, dependencies, package.json/package-lock.json, or Scrub Club changes.
+
+### `43f4087` — Public contact phone clarified and validated
+
+File: `app/contact/page.tsx`.
+
+Public contact form phone field remains optional. Non-empty values must be exactly 10 digits after stripping non-digits, or submit is blocked with an inline error. Input auto-formats to `(555) 123-4567` as typed, capped at 10 digits. Blank phone submits normally. `app/api/contact/route.ts` unchanged.
+
+### `0ee4e12` — Customer contact editing UX + Website Profile difference notes
+
+Files: `app/admin/AdminApp.tsx`, `app/components/admin/BusinessSection.tsx`.
+
+**Problem:** The Customer detail phone field had an always-visible Save button, which felt heavy for info that's rarely edited. Email wasn't editable at all. Separately, the Website Profile "phone differs from customer phone" note never rendered.
+
+**Root cause of the missing difference note:** `customers.id` is a Postgres `bigint` (a JS `number` at runtime) while `business_profiles.customer_id` is `text`. `handleCreateWebsiteProfile` set `customer_id: customer.id` without string coercion, so a freshly created profile's `customer_id` could hold a raw number. The note's lookup, `String(c.id) === p.customer_id`, then compared a string to a number — always `false` in JS — and the note had no fallback (unlike the adjacent "Linked to a customer" label, which degrades gracefully to generic text and masked the bug).
+
+**Fix:**
+- Customer contact info is now read-only by default in a single "Contact" card, with one "Edit" button. Editing reveals Email + Phone inputs with Save/Cancel shown only while editing; Cancel reverts unsaved changes.
+- Phone validation: blank allowed; non-empty must be exactly 10 digits after stripping non-digits.
+- Email validation: blank allowed; non-empty must match `/^[^\s@]+@[^\s@]+\.[^\s@]+$/`.
+- Save uses one combined handler (`onUpdateContact` → `handleUpdateCustomerContact`) updating only the customer's `email` and `phone` columns. Notes behavior untouched.
+- `handleCreateWebsiteProfile` now coerces `customer_id: String(customer.id)`. The three duplicated inline customer-lookup expressions in `BusinessSection.tsx` were consolidated into one shared `findLinkedCustomer` helper.
+- Added a new email-differ note (shows when both `profile.email` and `customer.email` are non-empty and their trimmed+lowercased values differ), mirroring the (now-fixed) phone note.
+- `customers` prop passed from `AdminApp` to `BusinessSection` extended to include `email`.
+
+### Behavior after fix
+
+Customer contact info (admin/internal) and Website Profile contact info (public website) remain intentionally separate records. The difference notes are informational only — no automatic sync was added in either direction, matching the pre-existing design intent.
+
+### QA
+
+Manual browser QA passed: public contact phone blank/invalid/valid paths; customer contact read-only default and Edit button; Save/Cancel visible only while editing; phone save/persist, partial-phone block, blank-phone save; email save/persist, invalid-email block, blank-email save; customer notes unaffected; Website Profile phone and email difference notes each appear on mismatch and disappear on match; confirmed no automatic sync exists between Customer and Website Profile contact info.
+
 ## 2026-07-01: Lead Create Customer Double-Click Guard (commit `1ed1fd7`)
 
 Commit `1ed1fd7`. File changed: `app/admin/AdminApp.tsx` only. Build: 22/22 routes, 0 TypeScript errors before commit. Working tree clean after push. No schema, RLS, service role, share tokens, preview refactor, dependencies, API, storage, type, phone, Website Profiles, or full redesign changes.

@@ -1027,4 +1027,24 @@ Commit `1ed1fd7`. File changed: `app/admin/AdminApp.tsx` only. Build: 22/22 rout
 
 **Fix:** Added `creatingCustomer` boolean state to `LeadsSection`. `handleCreateCustomer` sets the guard `true` before awaiting `onCreateCustomer(selected)` and resets it in `finally`. `creatingCustomer` is passed to `LeadDetail` as a prop; the button is `disabled` while true and shows "Creating…" instead of "Create customer from lead". Visual feedback: `disabled:opacity-50 disabled:cursor-not-allowed`. Lead → Customer creation/link/navigation behavior is otherwise unchanged.
 
+### Contact / Phone / Email Cleanup — Complete (pushed on main/origin/main, 2026-07-02)
+
+Two commits, both pushed to `main` and `origin/main`: `43f4087` (clarify and validate contact phone flow) and `0ee4e12` (improve customer contact editing). Build passed (22/22 routes, 0 TypeScript errors) before each commit. Manual browser QA passed for both. Files touched across the two commits: `app/contact/page.tsx`, `app/admin/AdminApp.tsx`, `app/components/admin/BusinessSection.tsx`. No schema, RLS, service role, share token, preview route, dependency, package.json/package-lock.json, or Scrub Club changes in either commit.
+
+**`43f4087` — Public contact phone clarified and validated:**
+- Public contact form (`app/contact/page.tsx`) phone field remains optional (no `required` attribute, labeled "(optional)").
+- Non-empty phone values must be exactly 10 digits after stripping non-digits; submit is blocked with an inline error ("Please enter a full 10-digit US phone number, or leave phone blank.") if not. Blank phone submits normally.
+- Input is auto-formatted to `(555) 123-4567` as the user types, capped at 10 digits.
+
+**`0ee4e12` — Customer contact editing UX + Website Profile difference notes:**
+- **Customer contact edit UX (`AdminApp.tsx`, `CustomerDetail`):** Customer email and phone are now read-only by default inside a single "Contact" card, with one "Edit" button. Clicking Edit reveals editable Email + Phone inputs with Save and Cancel buttons (only visible while editing). Cancel reverts unsaved changes and exits edit mode. This replaces the previous always-visible phone-only Save button flow.
+- **Validation:** Phone — blank allowed; non-empty must be exactly 10 digits after stripping non-digits, else inline error. Email — blank allowed; non-empty must match a reasonable email shape (`/^[^\s@]+@[^\s@]+\.[^\s@]+$/`), else inline error.
+- **Save behavior:** A single combined handler (`onUpdateContact` → `handleUpdateCustomerContact`) updates only the customer's `email` and `phone` columns via `supabase.from("customers").update({ email, phone })`. Customer notes behavior is unchanged (separate save path, untouched).
+- **Website Profile difference notes (`BusinessSection.tsx`):** Fixed a latent bug where the phone-differ note never rendered — root cause was `customer_id` being set from a raw (potentially numeric, since `customers.id` is Postgres `bigint`) `customer.id` value at profile-creation time in `handleCreateWebsiteProfile`, causing `String(c.id) === p.customer_id` comparisons to intermittently fail with no visual fallback (unlike the "Linked to a customer" label, which degrades gracefully). Fixed by coercing to `String(customer.id)` at creation and centralizing the id-lookup into one shared `findLinkedCustomer` helper (previously duplicated three times).
+- Added a new **email difference note**: shows when the profile is linked to a customer, both `profile.email` and `customer.email` are non-empty, and their trimmed+lowercased values differ.
+- Both notes are purely informational (italic, muted text) — no automatic sync exists or was added in either direction between Customer contact info and Website Profile contact info. The two remain intentionally separate data (Customer = internal/admin/client contact; Website Profile = public website contact).
+- `customers` prop passed from `AdminApp` to `BusinessSection` extended to include `email` (previously only `id`, `name`, `phone`).
+
+**Manual browser QA passed (2026-07-02):** public contact phone blank/invalid/valid submit paths; customer contact read-only default, Edit button, Save/Cancel-only-while-editing; phone save/persist, partial-phone block, blank-phone save; email save/persist, invalid-email block, blank-email save; customer notes unaffected; Website Profile phone difference note appears/disappears correctly on match/mismatch; Website Profile email difference note appears/disappears correctly on match/mismatch; confirmed no automatic sync in either direction.
+
 *Last updated: Phase 3.7 QA double-click guard fix complete (2026-07-01). Latest pushed commit: `1ed1fd7` (guard lead customer creation action). No schema/RLS/service role/share token/preview refactor/dependency/API/storage/type/phone/Website Profiles/full-redesign changes. Phase 3.7 admin QA bug-fix batch is now clean. Next step: next feature planning.*
