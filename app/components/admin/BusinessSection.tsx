@@ -108,6 +108,17 @@ function formatPhoneInput(value: string): string {
   return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
 }
 
+function normalizeEmail(value: string): string {
+  return value.trim().toLowerCase();
+}
+
+type LinkedCustomer = { id: string | number; name: string; phone?: string | null; email?: string | null };
+
+function findLinkedCustomer(customerId: string | undefined, customers?: LinkedCustomer[]): LinkedCustomer | null {
+  if (!customerId || !customers) return null;
+  return customers.find((c) => String(c.id) === customerId) ?? null;
+}
+
 // ── Shared tiny UI helpers ────────────────────────────────────────
 
 function Label({ children }: { children: React.ReactNode }) {
@@ -160,7 +171,7 @@ function Field({
 type View = "list" | "create" | "edit";
 type GenStatus = "idle" | "generating" | "success" | "error";
 
-export default function BusinessSection({ onNavigate, onNavigateToCustomer, customers }: { onNavigate?: (section: string) => void; onNavigateToCustomer?: (customerId: string) => void; customers?: Array<{ id: string | number; name: string; phone?: string | null }> } = {}) {
+export default function BusinessSection({ onNavigate, onNavigateToCustomer, customers }: { onNavigate?: (section: string) => void; onNavigateToCustomer?: (customerId: string) => void; customers?: LinkedCustomer[] } = {}) {
   const [view, setView]         = useState<View>("list");
   const [profiles, setProfiles] = useState<BusinessProfile[]>([]);
   const [editing, setEditing]   = useState<BusinessProfile | null>(null);
@@ -486,7 +497,7 @@ export default function BusinessSection({ onNavigate, onNavigateToCustomer, cust
             const packColor = STYLE_PACKS.find((s) => s.id === p.preferredStylePack)?.color ?? "#0ea5e9";
             const hasContent = !!p.generatedContent;
             const isStaleRow = !!(p.updatedAt && p.generatedContent?.generatedAt && new Date(p.updatedAt) > new Date(p.generatedContent.generatedAt));
-            const linkedName = p.customer_id && customers ? (customers.find((c) => String(c.id) === p.customer_id)?.name ?? null) : null;
+            const linkedName = findLinkedCustomer(p.customer_id, customers)?.name ?? null;
             return (
               <button
                 key={p.id}
@@ -532,9 +543,8 @@ export default function BusinessSection({ onNavigate, onNavigateToCustomer, cust
           (() => {
             const p = selectedProfile;
             const packColor = STYLE_PACKS.find((s) => s.id === p.preferredStylePack)?.color ?? "#0ea5e9";
-            const linkedCustomerName = p.customer_id && customers
-              ? (customers.find((c) => String(c.id) === p.customer_id)?.name ?? null)
-              : null;
+            const linkedCustomer = findLinkedCustomer(p.customer_id, customers);
+            const linkedCustomerName = linkedCustomer?.name ?? null;
             const isStale = !!(p.updatedAt && p.generatedContent?.generatedAt && new Date(p.updatedAt) > new Date(p.generatedContent.generatedAt));
             const genSt   = genStatus[p.id] ?? "idle";
             const genErr  = genError[p.id];
@@ -605,16 +615,25 @@ export default function BusinessSection({ onNavigate, onNavigateToCustomer, cust
                     </button>
                   </div>
                 )}
-                {/* Phone-differ note — informational only, no sync */}
+                {/* Contact-differ notes — informational only, no sync */}
                 {(() => {
-                  if (!p.customer_id || !p.phone || !customers) return null;
-                  const linkedCust = customers.find((c) => String(c.id) === p.customer_id);
-                  if (!linkedCust?.phone) return null;
-                  if (digitsOnly(p.phone) === digitsOnly(linkedCust.phone)) return null;
+                  if (!linkedCustomer) return null;
+                  const notes: string[] = [];
+                  if (p.phone.trim() && linkedCustomer.phone && digitsOnly(p.phone) !== digitsOnly(linkedCustomer.phone)) {
+                    notes.push("Website phone differs from customer contact phone.");
+                  }
+                  if (p.email.trim() && linkedCustomer.email && normalizeEmail(p.email) !== normalizeEmail(linkedCustomer.email)) {
+                    notes.push("Website email differs from customer contact email.");
+                  }
+                  if (notes.length === 0) return null;
                   return (
-                    <p style={{ fontSize: "12px", color: "#94a3b8", marginBottom: "16px", fontStyle: "italic" }}>
-                      Website phone differs from customer contact phone.
-                    </p>
+                    <div style={{ marginBottom: "16px" }}>
+                      {notes.map((n) => (
+                        <p key={n} style={{ fontSize: "12px", color: "#94a3b8", margin: "0 0 4px", fontStyle: "italic" }}>
+                          {n}
+                        </p>
+                      ))}
+                    </div>
                   );
                 })()}
 

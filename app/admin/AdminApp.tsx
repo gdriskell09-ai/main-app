@@ -36,6 +36,10 @@ function formatPhoneInput(value: string): string {
   return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
 }
 
+function isValidEmail(value: string): boolean {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(value);
+}
+
 // ─── Types ────────────────────────────────────────────────────
 
 type Section = "dashboard" | "leads" | "customers" | "invoices" | "map" | "canvass" | "maphub" | "contracts" | "ai_generator" | "websites" | "settings";
@@ -608,7 +612,7 @@ function LeadsSection({
 
 function CustomerDetail({
   customer, jobs, quotes, invoices, leads, onNavigate,
-  onClose, onUpdateNotes, onUpdatePhone, onAddJob, onUpdateJobStatus, onAddQuote, onUpdateQuoteStatus,
+  onClose, onUpdateNotes, onUpdateContact, onAddJob, onUpdateJobStatus, onAddQuote, onUpdateQuoteStatus,
   onAddInvoice, onUpdateInvoiceStatus, onConvertQuoteToInvoice, onDeleteCustomer, onNavigateToLead,
 }: {
   customer: Customer; jobs: Job[]; quotes: Quote[]; invoices: Invoice[]; leads: Lead[];
@@ -623,7 +627,7 @@ function CustomerDetail({
   onUpdateInvoiceStatus: (id: string, status: InvoiceStatus) => void;
   onConvertQuoteToInvoice: (quote: Quote) => Promise<void>;
   onDeleteCustomer: (id: string) => void;
-  onUpdatePhone: (id: string, phone: string | null) => Promise<void>;
+  onUpdateContact: (id: string, email: string | null, phone: string | null) => Promise<void>;
   onNavigateToLead?: (id: number) => void;
 }) {
   const [notes, setNotes]               = useState(customer.notes ?? "");
@@ -645,9 +649,12 @@ function CustomerDetail({
   const [submitting, setSubmitting]       = useState(false);
   const [profiles, setProfiles]           = useState<BusinessProfile[]>([]);
   const [profilesLoading, setProfilesLoading] = useState(true);
+  const [editingContact, setEditingContact] = useState(false);
+  const [editEmail, setEditEmail]         = useState(customer.email ?? "");
   const [editPhone, setEditPhone]         = useState(customer.phone ?? "");
+  const [emailError, setEmailError]       = useState("");
   const [phoneError, setPhoneError]       = useState("");
-  const [savingPhone, setSavingPhone]     = useState(false);
+  const [savingContact, setSavingContact] = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -658,8 +665,11 @@ function CustomerDetail({
   }, []);
 
   useEffect(() => {
+    setEditEmail(customer.email ?? "");
     setEditPhone(customer.phone ?? "");
+    setEmailError("");
     setPhoneError("");
+    setEditingContact(false);
   }, [customer.id]);
 
   const today          = new Date().toISOString().split("T")[0];
@@ -723,16 +733,36 @@ function CustomerDetail({
     setSaving(false);
   }
 
-  async function handleSavePhone() {
-    const digits = digitsOnly(editPhone.trim());
-    if (editPhone.trim() && digits.length !== 10) {
-      setPhoneError("Please enter a full 10-digit US phone number, or leave blank.");
-      return;
+  async function handleSaveContact() {
+    const trimmedEmail = editEmail.trim();
+    const trimmedPhone = editPhone.trim();
+    const digits = digitsOnly(trimmedPhone);
+    let hasError = false;
+    if (trimmedEmail && !isValidEmail(trimmedEmail)) {
+      setEmailError("Please enter a valid email address, or leave blank.");
+      hasError = true;
+    } else {
+      setEmailError("");
     }
+    if (trimmedPhone && digits.length !== 10) {
+      setPhoneError("Please enter a full 10-digit US phone number, or leave blank.");
+      hasError = true;
+    } else {
+      setPhoneError("");
+    }
+    if (hasError) return;
+    setSavingContact(true);
+    await onUpdateContact(customer.id, trimmedEmail || null, trimmedPhone || null);
+    setSavingContact(false);
+    setEditingContact(false);
+  }
+
+  function handleCancelContact() {
+    setEditEmail(customer.email ?? "");
+    setEditPhone(customer.phone ?? "");
+    setEmailError("");
     setPhoneError("");
-    setSavingPhone(true);
-    await onUpdatePhone(customer.id, editPhone.trim() || null);
-    setSavingPhone(false);
+    setEditingContact(false);
   }
 
   function openJobForm(fromQuote?: Quote) {
@@ -792,7 +822,7 @@ function CustomerDetail({
 
   function handleCreateWebsiteProfile() {
     createWebsiteProfileDraft({
-      customer_id: customer.id,
+      customer_id: String(customer.id),
       businessName: customer.business || customer.name,
       industry: bizType || "",
       phone: customer.phone || "",
@@ -837,7 +867,6 @@ function CustomerDetail({
       {/* Contact info */}
       <div className="mt-4 grid gap-3 rounded-[1.5rem] border border-black/5 bg-[#f7f5ef] p-5 text-sm sm:grid-cols-2">
         {[
-          { label: "Email",          value: customer.email },
           { label: "Address",        value: customer.address },
           { label: "Customer since", value: fmt(customer.created_at) },
         ].map(({ label, value }) => value && (
@@ -848,23 +877,65 @@ function CustomerDetail({
         ))}
       </div>
 
-      {/* Phone — editable contact phone */}
+      {/* Contact — editable email + phone */}
       <div className="mt-3 rounded-[1.5rem] border border-black/5 bg-[#f7f5ef] px-5 py-4">
-        <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-slate-400">Phone (contact)</p>
-        <div className="flex gap-2">
-          <input
-            type="tel"
-            value={editPhone}
-            onChange={(e) => { setEditPhone(formatPhoneInput(e.target.value)); setPhoneError(""); }}
-            placeholder="(555) 123-4567"
-            className="min-w-0 flex-1 rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-slate-950 placeholder-slate-400 outline-none transition focus:border-slate-400"
-          />
-          <button onClick={handleSavePhone} disabled={savingPhone}
-            className="shrink-0 rounded-full bg-slate-950 px-4 py-2 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60">
-            {savingPhone ? "Saving…" : "Save"}
-          </button>
+        <div className="flex items-center justify-between gap-2">
+          <p className="text-xs font-semibold uppercase tracking-widest text-slate-400">Contact</p>
+          {!editingContact && (
+            <button onClick={() => setEditingContact(true)}
+              className="shrink-0 rounded-full border border-black/10 px-3 py-1 text-xs font-medium text-slate-500 transition hover:border-slate-400 hover:text-slate-950">
+              Edit
+            </button>
+          )}
         </div>
-        {phoneError && <p className="mt-1.5 text-xs text-red-600">{phoneError}</p>}
+
+        {!editingContact ? (
+          <div className="mt-2 grid gap-3 sm:grid-cols-2">
+            <div>
+              <p className="text-xs text-slate-400">Email</p>
+              <p className="mt-0.5 text-slate-800">{customer.email || "—"}</p>
+            </div>
+            <div>
+              <p className="text-xs text-slate-400">Phone</p>
+              <p className="mt-0.5 text-slate-800">{customer.phone ? formatPhone(customer.phone) : "—"}</p>
+            </div>
+          </div>
+        ) : (
+          <div className="mt-2 space-y-3">
+            <div>
+              <label className="mb-1 block text-xs text-slate-500">Email</label>
+              <input
+                type="email"
+                value={editEmail}
+                onChange={(e) => { setEditEmail(e.target.value); setEmailError(""); }}
+                placeholder="jane@example.com"
+                className="w-full rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-slate-950 placeholder-slate-400 outline-none transition focus:border-slate-400"
+              />
+              {emailError && <p className="mt-1 text-xs text-red-600">{emailError}</p>}
+            </div>
+            <div>
+              <label className="mb-1 block text-xs text-slate-500">Phone</label>
+              <input
+                type="tel"
+                value={editPhone}
+                onChange={(e) => { setEditPhone(formatPhoneInput(e.target.value)); setPhoneError(""); }}
+                placeholder="(555) 123-4567"
+                className="w-full rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-slate-950 placeholder-slate-400 outline-none transition focus:border-slate-400"
+              />
+              {phoneError && <p className="mt-1 text-xs text-red-600">{phoneError}</p>}
+            </div>
+            <div className="flex gap-2">
+              <button onClick={handleSaveContact} disabled={savingContact}
+                className="rounded-full bg-slate-950 px-4 py-2 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60">
+                {savingContact ? "Saving…" : "Save"}
+              </button>
+              <button onClick={handleCancelContact} disabled={savingContact}
+                className="rounded-full border border-black/10 px-4 py-2 text-xs font-semibold text-slate-600 transition hover:border-slate-400 disabled:opacity-60">
+                Cancel
+              </button>
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Smart Suggestions */}
@@ -1202,7 +1273,7 @@ function CustomerDetail({
 
 function CustomersSection({
   customers, jobs, quotes, invoices, leads, loading,
-  onUpdateNotes, onUpdatePhone, onAddJob, onUpdateJobStatus, onAddQuote, onUpdateQuoteStatus,
+  onUpdateNotes, onUpdateContact, onAddJob, onUpdateJobStatus, onAddQuote, onUpdateQuoteStatus,
   onAddInvoice, onUpdateInvoiceStatus, onConvertQuoteToInvoice, onDeleteCustomer,
   onAddDirectCustomer, onNavigate, selectedCustomerId, onSelectCustomer, onNavigateToLead,
 }: {
@@ -1216,7 +1287,7 @@ function CustomersSection({
   onUpdateInvoiceStatus: (id: string, status: InvoiceStatus) => void;
   onConvertQuoteToInvoice: (quote: Quote) => Promise<void>;
   onDeleteCustomer: (id: string) => void;
-  onUpdatePhone: (id: string, phone: string | null) => Promise<void>;
+  onUpdateContact: (id: string, email: string | null, phone: string | null) => Promise<void>;
   onAddDirectCustomer: (name: string, email: string, phone: string, business: string) => Promise<Customer | null>;
   onNavigate: (s: Section) => void;
   selectedCustomerId: string | null;
@@ -1255,7 +1326,7 @@ function CustomersSection({
     customer: selected, jobs, quotes, invoices, leads,
     onClose: () => onSelectCustomer(null),
     onNavigate,
-    onUpdateNotes, onUpdatePhone, onAddJob, onUpdateJobStatus, onAddQuote, onUpdateQuoteStatus,
+    onUpdateNotes, onUpdateContact, onAddJob, onUpdateJobStatus, onAddQuote, onUpdateQuoteStatus,
     onAddInvoice, onUpdateInvoiceStatus, onConvertQuoteToInvoice,
     onDeleteCustomer: (id: string) => { onDeleteCustomer(id); onSelectCustomer(null); },
     onNavigateToLead,
@@ -2117,9 +2188,9 @@ export default function AdminApp() {
     await supabase.from("customers").update({ notes }).eq("id", id);
     setCustomers((prev) => prev.map((c) => (c.id === id ? { ...c, notes } : c)));
   }
-  async function handleUpdateCustomerPhone(id: string, phone: string | null): Promise<void> {
-    await supabase.from("customers").update({ phone }).eq("id", id);
-    setCustomers((prev) => prev.map((c) => (c.id === id ? { ...c, phone } : c)));
+  async function handleUpdateCustomerContact(id: string, email: string | null, phone: string | null): Promise<void> {
+    await supabase.from("customers").update({ email, phone }).eq("id", id);
+    setCustomers((prev) => prev.map((c) => (c.id === id ? { ...c, email, phone } : c)));
   }
   async function handleAddJob(customerId: string, title: string, scheduled_date: string, notes: string): Promise<void> {
     const { data } = await supabase.from("jobs").insert({
@@ -2320,7 +2391,7 @@ export default function AdminApp() {
           {section === "customers" && (
             <CustomersSection
               customers={customers} jobs={jobs} quotes={quotes} invoices={invoices} leads={leads} loading={customersLoading}
-              onUpdateNotes={handleUpdateCustomerNotes} onUpdatePhone={handleUpdateCustomerPhone}
+              onUpdateNotes={handleUpdateCustomerNotes} onUpdateContact={handleUpdateCustomerContact}
               onAddJob={handleAddJob}
               onUpdateJobStatus={handleUpdateJobStatus} onAddQuote={handleAddQuote}
               onUpdateQuoteStatus={handleUpdateQuoteStatus}
@@ -2348,7 +2419,7 @@ export default function AdminApp() {
             <BusinessSection
               onNavigate={(s) => setSection(s as Section)}
               onNavigateToCustomer={(id) => { setSelectedCustomerId(id); setSection("customers"); }}
-              customers={customers.map((c) => ({ id: c.id, name: c.name, phone: c.phone }))}
+              customers={customers.map((c) => ({ id: c.id, name: c.name, phone: c.phone, email: c.email }))}
             />
           )}
           {section === "settings"     && <SettingsSection email={userEmail} />}
