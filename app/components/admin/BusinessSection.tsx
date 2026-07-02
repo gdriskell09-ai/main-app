@@ -160,7 +160,7 @@ function Field({
 type View = "list" | "create" | "edit";
 type GenStatus = "idle" | "generating" | "success" | "error";
 
-export default function BusinessSection({ onNavigate, onNavigateToCustomer, customers }: { onNavigate?: (section: string) => void; onNavigateToCustomer?: (customerId: string) => void; customers?: Array<{ id: string | number; name: string }> } = {}) {
+export default function BusinessSection({ onNavigate, onNavigateToCustomer, customers }: { onNavigate?: (section: string) => void; onNavigateToCustomer?: (customerId: string) => void; customers?: Array<{ id: string | number; name: string; phone?: string | null }> } = {}) {
   const [view, setView]         = useState<View>("list");
   const [profiles, setProfiles] = useState<BusinessProfile[]>([]);
   const [editing, setEditing]   = useState<BusinessProfile | null>(null);
@@ -605,6 +605,18 @@ export default function BusinessSection({ onNavigate, onNavigateToCustomer, cust
                     </button>
                   </div>
                 )}
+                {/* Phone-differ note — informational only, no sync */}
+                {(() => {
+                  if (!p.customer_id || !p.phone || !customers) return null;
+                  const linkedCust = customers.find((c) => String(c.id) === p.customer_id);
+                  if (!linkedCust?.phone) return null;
+                  if (digitsOnly(p.phone) === digitsOnly(linkedCust.phone)) return null;
+                  return (
+                    <p style={{ fontSize: "12px", color: "#94a3b8", marginBottom: "16px", fontStyle: "italic" }}>
+                      Website phone differs from customer contact phone.
+                    </p>
+                  );
+                })()}
 
                 {/* Primary actions */}
                 <div style={{ display: "flex", gap: "10px", marginBottom: "12px", flexWrap: "wrap" }}>

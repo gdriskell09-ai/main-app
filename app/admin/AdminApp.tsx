@@ -608,7 +608,7 @@ function LeadsSection({
 
 function CustomerDetail({
   customer, jobs, quotes, invoices, leads, onNavigate,
-  onClose, onUpdateNotes, onAddJob, onUpdateJobStatus, onAddQuote, onUpdateQuoteStatus,
+  onClose, onUpdateNotes, onUpdatePhone, onAddJob, onUpdateJobStatus, onAddQuote, onUpdateQuoteStatus,
   onAddInvoice, onUpdateInvoiceStatus, onConvertQuoteToInvoice, onDeleteCustomer, onNavigateToLead,
 }: {
   customer: Customer; jobs: Job[]; quotes: Quote[]; invoices: Invoice[]; leads: Lead[];
@@ -623,6 +623,7 @@ function CustomerDetail({
   onUpdateInvoiceStatus: (id: string, status: InvoiceStatus) => void;
   onConvertQuoteToInvoice: (quote: Quote) => Promise<void>;
   onDeleteCustomer: (id: string) => void;
+  onUpdatePhone: (id: string, phone: string | null) => Promise<void>;
   onNavigateToLead?: (id: number) => void;
 }) {
   const [notes, setNotes]               = useState(customer.notes ?? "");
@@ -644,6 +645,9 @@ function CustomerDetail({
   const [submitting, setSubmitting]       = useState(false);
   const [profiles, setProfiles]           = useState<BusinessProfile[]>([]);
   const [profilesLoading, setProfilesLoading] = useState(true);
+  const [editPhone, setEditPhone]         = useState(customer.phone ?? "");
+  const [phoneError, setPhoneError]       = useState("");
+  const [savingPhone, setSavingPhone]     = useState(false);
 
   useEffect(() => {
     (async () => {
@@ -652,6 +656,11 @@ function CustomerDetail({
       setProfilesLoading(false);
     })();
   }, []);
+
+  useEffect(() => {
+    setEditPhone(customer.phone ?? "");
+    setPhoneError("");
+  }, [customer.id]);
 
   const today          = new Date().toISOString().split("T")[0];
   const defaultDueDate = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString().split("T")[0];
@@ -712,6 +721,18 @@ function CustomerDetail({
     setSaving(true);
     await onUpdateNotes(customer.id, notes);
     setSaving(false);
+  }
+
+  async function handleSavePhone() {
+    const digits = digitsOnly(editPhone.trim());
+    if (editPhone.trim() && digits.length !== 10) {
+      setPhoneError("Please enter a full 10-digit US phone number, or leave blank.");
+      return;
+    }
+    setPhoneError("");
+    setSavingPhone(true);
+    await onUpdatePhone(customer.id, editPhone.trim() || null);
+    setSavingPhone(false);
   }
 
   function openJobForm(fromQuote?: Quote) {
@@ -817,7 +838,6 @@ function CustomerDetail({
       <div className="mt-4 grid gap-3 rounded-[1.5rem] border border-black/5 bg-[#f7f5ef] p-5 text-sm sm:grid-cols-2">
         {[
           { label: "Email",          value: customer.email },
-          { label: "Phone",          value: formatPhone(customer.phone) },
           { label: "Address",        value: customer.address },
           { label: "Customer since", value: fmt(customer.created_at) },
         ].map(({ label, value }) => value && (
@@ -826,6 +846,25 @@ function CustomerDetail({
             <p className="mt-1 text-slate-800">{value}</p>
           </div>
         ))}
+      </div>
+
+      {/* Phone — editable contact phone */}
+      <div className="mt-3 rounded-[1.5rem] border border-black/5 bg-[#f7f5ef] px-5 py-4">
+        <p className="mb-2 text-xs font-semibold uppercase tracking-widest text-slate-400">Phone (contact)</p>
+        <div className="flex gap-2">
+          <input
+            type="tel"
+            value={editPhone}
+            onChange={(e) => { setEditPhone(formatPhoneInput(e.target.value)); setPhoneError(""); }}
+            placeholder="(555) 123-4567"
+            className="min-w-0 flex-1 rounded-xl border border-black/10 bg-white px-3 py-2 text-sm text-slate-950 placeholder-slate-400 outline-none transition focus:border-slate-400"
+          />
+          <button onClick={handleSavePhone} disabled={savingPhone}
+            className="shrink-0 rounded-full bg-slate-950 px-4 py-2 text-xs font-semibold text-white transition hover:bg-slate-800 disabled:opacity-60">
+            {savingPhone ? "Saving…" : "Save"}
+          </button>
+        </div>
+        {phoneError && <p className="mt-1.5 text-xs text-red-600">{phoneError}</p>}
       </div>
 
       {/* Smart Suggestions */}
@@ -1163,7 +1202,7 @@ function CustomerDetail({
 
 function CustomersSection({
   customers, jobs, quotes, invoices, leads, loading,
-  onUpdateNotes, onAddJob, onUpdateJobStatus, onAddQuote, onUpdateQuoteStatus,
+  onUpdateNotes, onUpdatePhone, onAddJob, onUpdateJobStatus, onAddQuote, onUpdateQuoteStatus,
   onAddInvoice, onUpdateInvoiceStatus, onConvertQuoteToInvoice, onDeleteCustomer,
   onAddDirectCustomer, onNavigate, selectedCustomerId, onSelectCustomer, onNavigateToLead,
 }: {
@@ -1177,6 +1216,7 @@ function CustomersSection({
   onUpdateInvoiceStatus: (id: string, status: InvoiceStatus) => void;
   onConvertQuoteToInvoice: (quote: Quote) => Promise<void>;
   onDeleteCustomer: (id: string) => void;
+  onUpdatePhone: (id: string, phone: string | null) => Promise<void>;
   onAddDirectCustomer: (name: string, email: string, phone: string, business: string) => Promise<Customer | null>;
   onNavigate: (s: Section) => void;
   selectedCustomerId: string | null;
@@ -1215,7 +1255,7 @@ function CustomersSection({
     customer: selected, jobs, quotes, invoices, leads,
     onClose: () => onSelectCustomer(null),
     onNavigate,
-    onUpdateNotes, onAddJob, onUpdateJobStatus, onAddQuote, onUpdateQuoteStatus,
+    onUpdateNotes, onUpdatePhone, onAddJob, onUpdateJobStatus, onAddQuote, onUpdateQuoteStatus,
     onAddInvoice, onUpdateInvoiceStatus, onConvertQuoteToInvoice,
     onDeleteCustomer: (id: string) => { onDeleteCustomer(id); onSelectCustomer(null); },
     onNavigateToLead,
@@ -2077,6 +2117,10 @@ export default function AdminApp() {
     await supabase.from("customers").update({ notes }).eq("id", id);
     setCustomers((prev) => prev.map((c) => (c.id === id ? { ...c, notes } : c)));
   }
+  async function handleUpdateCustomerPhone(id: string, phone: string | null): Promise<void> {
+    await supabase.from("customers").update({ phone }).eq("id", id);
+    setCustomers((prev) => prev.map((c) => (c.id === id ? { ...c, phone } : c)));
+  }
   async function handleAddJob(customerId: string, title: string, scheduled_date: string, notes: string): Promise<void> {
     const { data } = await supabase.from("jobs").insert({
       customer_id: customerId, title, scheduled_date: scheduled_date || null, notes: notes || null,
@@ -2276,7 +2320,8 @@ export default function AdminApp() {
           {section === "customers" && (
             <CustomersSection
               customers={customers} jobs={jobs} quotes={quotes} invoices={invoices} leads={leads} loading={customersLoading}
-              onUpdateNotes={handleUpdateCustomerNotes} onAddJob={handleAddJob}
+              onUpdateNotes={handleUpdateCustomerNotes} onUpdatePhone={handleUpdateCustomerPhone}
+              onAddJob={handleAddJob}
               onUpdateJobStatus={handleUpdateJobStatus} onAddQuote={handleAddQuote}
               onUpdateQuoteStatus={handleUpdateQuoteStatus}
               onAddInvoice={handleAddInvoice} onUpdateInvoiceStatus={handleUpdateInvoiceStatus}
@@ -2303,7 +2348,7 @@ export default function AdminApp() {
             <BusinessSection
               onNavigate={(s) => setSection(s as Section)}
               onNavigateToCustomer={(id) => { setSelectedCustomerId(id); setSection("customers"); }}
-              customers={customers.map((c) => ({ id: c.id, name: c.name }))}
+              customers={customers.map((c) => ({ id: c.id, name: c.name, phone: c.phone }))}
             />
           )}
           {section === "settings"     && <SettingsSection email={userEmail} />}

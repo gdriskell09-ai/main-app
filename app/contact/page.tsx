@@ -53,8 +53,12 @@ const needs = [
 
 type FormState = "idle" | "submitting" | "success" | "error";
 
+function digitsOnly(value: string): string {
+  return value.replace(/\D/g, "");
+}
+
 function formatPhoneInput(value: string): string {
-  const d = value.replace(/\D/g, "").slice(0, 10);
+  const d = digitsOnly(value).slice(0, 10);
   if (d.length <= 3) return d;
   if (d.length <= 6) return `(${d.slice(0, 3)}) ${d.slice(3)}`;
   return `(${d.slice(0, 3)}) ${d.slice(3, 6)}-${d.slice(6)}`;
@@ -88,6 +92,11 @@ function ContactForm() {
 
   async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    if (form.phone && digitsOnly(form.phone).length !== 10) {
+      setErrorMsg("Please enter a full 10-digit US phone number, or leave phone blank.");
+      setStatus("error");
+      return;
+    }
     setStatus("submitting");
     setErrorMsg("");
 
